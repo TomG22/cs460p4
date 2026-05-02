@@ -18,16 +18,12 @@
  |                 Run:     java Prog4 [username] [password]
  |
  +-----------------------------------------------------------------------------
- |  Description:  This program prompts the user to choose from 4 queries. This
- |                program requires being able to access the created and filled
- |                tables from TableMaker.java and TableFiller.java.
+ |  Description:
  |
  |
- |        Input: fileName.csv - a csv file that (if non-empty) contains data in
- |               the 11 data fields from the given bat cave dataset
+ |        Input:
  |
- |       Output: fileName.bin - a binary file containing the data from the csv
- |               file.
+ |       Output:
  |
  |   Techniques:
  |
@@ -38,8 +34,6 @@
  *---------------------------------------------------------------------------*/
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Prog4 {
