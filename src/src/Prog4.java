@@ -43,50 +43,6 @@ import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Prog4 {
-    /*-------------------------------------------------------------------------
-     | Method: initConnection (String username, String password)
-     |
-     | Purpose: Establishes a connection to Oracle. Begins by loading in the
-     |          JDBC driver, then creates the connection and returns it to the
-     |          user.
-     |
-     |
-     | Pre-condition: The Oracle JDBC driver should be added to the classpath
-     |                environment variable. The provided username and password
-     |                should be a correct Oracle username/password match.
-     |
-     | Post-condition: The connection to the DBMS in Oracle is established.
-     |
-     |
-     | Parameters:
-     |      username - the provided oracle username
-     |      password - the provided oracle password
-     |
-     | Returns:
-     |      Connection - the initialized and connected Oracle connection object
-     *-----------------------------------------------------------------------*/
-    private Connection initConnection(String username, String password) {
-        String oracleURL = "jdbc:oracle:thin:@aloe.cs.arizona.edu:1521:oracle";
-
-        // Attempting to connect to oracle driver
-        try {
-            Class.forName("oracle.jdbc.OracleDriver");
-        } catch (ClassNotFoundException e) {
-            System.out.println("Issue loading JDBC driver\n"
-                    + "Try checking the classpath");
-            System.exit(-1);
-        }
-
-        // Attempting to set up connection to oracle server
-        try {
-            return DriverManager.getConnection(oracleURL, username, password);
-        } catch (SQLException e) {
-            System.out.println("Issue connecting to oracle\n");
-            System.exit(-1);
-        }
-        return null; // Should not reach here, TERRIBLE error if so
-    }
-
     public static void main(String[] args) {
         Prog4 program = new Prog4();
         String username, password;
@@ -104,11 +60,11 @@ public class Prog4 {
             password = scanner.nextLine();
         }
 
-        Connection dbConnection = program.initConnection(username, password);
+        Connection dbConnection = DBConnection.initConnection(username, password);
         System.out.println("Welcome to your personalized AI Environment\n"
                 + "What would you like to do?\n");
         while (stillGoing) {
-            System.out.println("Ask Some Queries");
+            System.out.println("Ask Some Queries\n");
             System.out.println("Handle my Environment");
         }
     }
