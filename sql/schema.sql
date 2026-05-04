@@ -5,10 +5,13 @@
  | Description: SQL queries to create the tables associated with |
  |     our relations. Has correct PK-FK relationships and the    |
  |     appropriate constraints.                                  |
- | Last Modification: 05-03-2026                                 |
+ | Last Modification: 05-04-2026                                 |
  *---------------------------------------------------------------*/
 -- Ranges for varchar2, number, and using integer can be changed
 
+----------------------------
+-- Table Creation Queries --
+----------------------------
 /*-------------------------------*
  | MembershipTier Table Creation |
  *-------------------------------*/
@@ -25,7 +28,7 @@ CREATE TABLE MembershipTier (
  *--------------------------------*/
 CREATE TABLE ApplicationUser (
     userID            INTEGER      PRIMARY KEY,
-    tierID            INTEGER      NOT NULL, -- FK to MembershipTier
+    tierID            INTEGER, -- FK to MembershipTier
     "name"            VARCHAR2(50) NOT NULL,
     email             VARCHAR2(50) NOT NULL UNIQUE,
     creationDate      DATE         NOT NULL,
@@ -59,23 +62,6 @@ CREATE TABLE Invoice (
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE
 );
 
-/*------------------------------*
- | SupportTicket Table Creation |
- *------------------------------*/
-CREATE TABLE SupportTicket (
-    ticketID       INTEGER        PRIMARY KEY,
-    userID         INTEGER, -- FK to AppUser
-    agentID        INTEGER,   -- FK to SuppAgent
-    topic          VARCHAR2(1000) NOT NULL,
-    dateOpened     DATE           NOT NULL,
-    resolutionDays NUMBER(5)      NOT NULL,
-    outcome        VARCHAR2(1000) NOT NULL,
-    CONSTRAINT FK_UserTicket FOREIGN KEY (userID)
-        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
-    CONSTRAINT FK_AgentTicket FOREIGN KEY (agentID)
-        REFERENCES SupportAgent(agentID) ON DELETE SET NULL
-);
-
 /*-----------------------------*
  | SupportAgent Table Creation |
  *-----------------------------*/
@@ -83,6 +69,23 @@ CREATE TABLE SupportAgent (
     agentID    INTEGER      PRIMARY KEY,
     name       VARCHAR2(50) NOT NULL,
     email      VARCHAR2(50) NOT NULL UNIQUE
+);
+
+/*------------------------------*
+ | SupportTicket Table Creation |
+ *------------------------------*/
+CREATE TABLE SupportTicket (
+    ticketID       INTEGER        PRIMARY KEY,
+    userID         INTEGER, -- FK to AppUser
+    agentID        INTEGER, -- FK to SuppAgent
+    topic          VARCHAR2(1000) NOT NULL,
+    dateOpened     DATE           NOT NULL,
+    resolutionDays NUMBER(5),
+    outcome        VARCHAR2(1000),
+    CONSTRAINT FK_UserTicket FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT FK_AgentTicket FOREIGN KEY (agentID)
+        REFERENCES SupportAgent(agentID) ON DELETE SET NULL
 );
 
 /*--------------------------*
@@ -110,6 +113,19 @@ CREATE TABLE WorkspaceMembership (
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
     CONSTRAINT  FK_WM_Workspace FOREIGN KEY (workspaceID)
         REFERENCES Workspace(workspaceID) ON DELETE CASCADE
+);
+
+/*------------------------*
+ | Persona Table Creation |
+ *------------------------*/
+CREATE TABLE Persona (
+    personalID   INTEGER PRIMARY KEY,
+    creatorID    INTEGER, -- FK to UserApp
+    "name"       VARCHAR2(50)  NOT NULL,
+    instructions VARCHAR2(500) NOT NULL,
+    creationDate DATE          NOT NULL,
+    CONSTRAINT FK_PersonaUser FOREIGN KEY (creatorID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE
 );
 
 /*-----------------------------*
@@ -149,14 +165,15 @@ CREATE TABLE Message (
  | Feedback Table Creation |
  *-------------------------*/
 CREATE TABLE Feedback (
-    feedbackID    INTEGER        NOT NULL,
-    messageID     INTEGER        NOT NULL, -- FK to Message
-    rating        VARCHAR(15)    NOT NULL, -- e.g. Thumbs Up/Thumbs Down
-    feedbackText  VARCHAR2(1000) NOT NULL,
-    timeSubmitted TIMESTAMP      NOT NULL,
+    feedbackID     INTEGER        NOT NULL,
+    messageID      INTEGER        NOT NULL, -- FK to Message
+    conversationID INTEGER,                 -- Added new FK for composite Message PK
+    rating         VARCHAR(15)    NOT NULL, -- e.g. Thumbs Up/Thumbs Down
+    feedbackText   VARCHAR2(1000) NOT NULL,
+    timeSubmitted  TIMESTAMP      NOT NULL,
     CONSTRAINT PK_Feedback PRIMARY KEY (feedbackID, messageID),
-    CONSTRAINT FK_FeedbackMessage FOREIGN KEY (messageID)
-        REFERENCES Message(messageID) ON DELETE CASCADE
+    CONSTRAINT FK_FeedbackMessage FOREIGN KEY (messageID, conversationID)
+        REFERENCES Message(messageID, conversationID) ON DELETE CASCADE
 );
 
 /*-------------------------*
@@ -165,25 +182,13 @@ CREATE TABLE Feedback (
 CREATE TABLE Bookmark (
     userID         INTEGER NOT NULL, -- FK to AppUser
     messageID      INTEGER NOT NULL, -- FK to Message
+    conversationID INTEGER,          -- Like for feedback, added FK for composite Message PK
     timeBookmarked TIMESTAMP,
     CONSTRAINT PK_Bookmark PRIMARY KEY (userID, messageID), -- Added combined primary key
     CONSTRAINT FK_BookmarkUser FOREIGN KEY (userID)
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
-    CONSTRAINT FK_BookmarkMessage FOREIGN KEY (messageID)
-        REFERENCES Message(messageID) ON DELETE CASCADE
-);
-
-/*------------------------*
- | Persona Table Creation |
- *------------------------*/
-CREATE TABLE Persona (
-    personalID   INTEGER PRIMARY KEY,
-    creatorID    INTEGER, -- FK to UserApp
-    "name"       VARCHAR2(50)  NOT NULL,
-    instructions VARCHAR2(500) NOT NULL,
-    creationDate DATE          NOT NULL,
-    CONSTRAINT FK_PersonaUser FOREIGN KEY (creatorID)
-        REFERENCES ApplicationUser(userID) ON DELETE CASCADE
+    CONSTRAINT FK_BookmarkMessage FOREIGN KEY (messageID, conversationID)
+        REFERENCES Message(messageID, conversationID) ON DELETE CASCADE
 );
 
 /*-------------------------------*
@@ -192,7 +197,7 @@ CREATE TABLE Persona (
 CREATE TABLE PromptTemplate (
     templateID    INTEGER PRIMARY KEY,
     creatorID     INTEGER, -- FK to AppUser
-    workspaceID   INTEGER,  -- FK to Workspace
+    workspaceID   INTEGER, -- FK to Workspace
     title         VARCHAR2(50)   NOT NULL,
     content       VARCHAR2(1000) NOT NULL,
     category      VARCHAR2(50)   NOT NULL,
@@ -200,6 +205,24 @@ CREATE TABLE PromptTemplate (
     creationDate  DATE,
     CONSTRAINT FK_PromptTemplateUser FOREIGN KEY (creatorID)
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
-    CONSTRAINT FK_PromptTemplateWorkspace FOREIGN KEY
+    CONSTRAINT FK_PromptTemplateWorkspace FOREIGN KEY (workspaceID)
         REFERENCES Workspace(workspaceID) ON DELETE SET NULL
 );
+
+-------------------------------
+-- Sequence Creation Queries --
+-------------------------------
+CREATE SEQUENCE MembershipTier_SEQ      START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE ApplicationUser_SEQ     START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE BillingProfile_SEQ      START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Invoice_SEQ             START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE SupportAgent_SEQ        START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE SupportTicket_SEQ       START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Workspace_SEQ           START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE WorkspaceMembership_SEQ START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Persona_SEQ             START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Conversation_SEQ        START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Message_SEQ             START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Feedback_SEQ            START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE Bookmark_SEQ            START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE PromptTemplate_SEQ      START WITH 1 INCREMENT BY 1
