@@ -7,92 +7,109 @@
  |     appropriate constraints.                                  |
  | Last Modification: 05-03-2026                                 |
  *---------------------------------------------------------------*/
-
-/*--------------------------------*
- | ApplicationUser Table Creation |
- *--------------------------------*/
- -- Ranges for varchar2, number, and using integer can be changed
-CREATE TABLE ApplicationUser (
-	userID            INTEGER PRIMARY KEY,
-    tierID            INTEGER REFERENCES MembershipTier(tierID), -- FK to MembershipTier
-	userName          VARCHAR2(50),
-	email             VARCHAR2(50),
-	creationDate      DATE,
-	preferredLanguage VARCHAR2(20)
-);
+-- Ranges for varchar2, number, and using integer can be changed
 
 /*-------------------------------*
  | MembershipTier Table Creation |
  *-------------------------------*/
 CREATE TABLE MembershipTier (
-    tierID            INTEGER PRIMARY KEY,
-    tierName          VARCHAR2(50),
-    maxMessagesPerDay Number(6),   -- Guessing 999,999 max messages is enough
-    proModelStatus    Number(1),   -- True or false (1 or 0)
-    monthlyFee        Number(10,2) -- Accounting for cents
+    tierID            INTEGER      PRIMARY KEY,
+    "name"            VARCHAR2(50) NOT NULL, -- Added quotes to avoid using a keyword, might be doing too much though
+    maxMessagesPerDay Number(6)    NOT NULL, -- Guessing 999,999 max messages is enough
+    proModelStatus    Number(1)    NOT NULL, -- True or false (1 or 0)
+    monthlyFee        Number(10,2) NOT NULL  -- Accounting for cents
+);
+
+/*--------------------------------*
+ | ApplicationUser Table Creation |
+ *--------------------------------*/
+CREATE TABLE ApplicationUser (
+    userID            INTEGER      PRIMARY KEY,
+    tierID            INTEGER      NOT NULL, -- FK to MembershipTier
+    "name"            VARCHAR2(50) NOT NULL,
+    email             VARCHAR2(50) NOT NULL UNIQUE,
+    creationDate      DATE         NOT NULL,
+    preferredLanguage VARCHAR2(20) NOT NULL,
+    CONSTRAINT FK_UserTier FOREIGN KEY (tierID)
+        REFERENCES MembershipTier(tierID) ON DELETE SET NULL -- Don't want to delete user if a tier gets removed
 );
 
 /*-------------------------------*
  | BillingProfile Table Creation |
  *-------------------------------*/
 CREATE TABLE BillingProfile (
-    billingID      INTEGER PRIMARY KEY,
-    userID         INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    paymentMethod  VARCHAR(15),
-    billingAddress VARCHAR(50)
+    billingID      INTEGER     PRIMARY KEY,
+    userID         INTEGER, -- FK to AppUser
+    paymentMethod  VARCHAR(15) NOT NULL,
+    billingAddress VARCHAR(50) NOT NULL,
+    CONSTRAINT FK_BillingUser FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE -- If userID deleted then delete billing profile too
 );
 
 /*------------------------*
  | Invoice Table Creation |
  *------------------------*/
 CREATE TABLE Invoice (
-    invoiceID     INTEGER PRIMARY KEY,
-    userID        INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    amount        NUMBER(10,2), -- Accounting for cents
-    invoiceDate   DATE,
-    paymentStatus VARCHAR(15)   -- Changed to be like "pending" or "paid"
+    invoiceID     INTEGER      PRIMARY KEY,
+    userID        INTEGER, -- FK to AppUser
+    amount        NUMBER(10,2) NOT NULL, -- Accounting for cents
+    invoiceDate   DATE         NOT NULL,
+    paymentStatus VARCHAR(10)  NOT NULL, -- Changed to be like "unpaid"/"paid"/ and maybe "pending"
+    CONSTRAINT FK_InvoiceUser FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE
 );
 
 /*------------------------------*
  | SupportTicket Table Creation |
  *------------------------------*/
 CREATE TABLE SupportTicket (
-    ticketID       INTEGER PRIMARY KEY,
-    userID         INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    agentID        INTEGER REFERENCES SupportAgent(agentID),   -- FK to SuppAgent
-    topic          VARCHAR2(1000),
-    dateOpened     DATE,
-    resolutionDays NUMBER(5),
-    outcome        VARCHAR2(1000)
+    ticketID       INTEGER        PRIMARY KEY,
+    userID         INTEGER, -- FK to AppUser
+    agentID        INTEGER,   -- FK to SuppAgent
+    topic          VARCHAR2(1000) NOT NULL,
+    dateOpened     DATE           NOT NULL,
+    resolutionDays NUMBER(5)      NOT NULL,
+    outcome        VARCHAR2(1000) NOT NULL,
+    CONSTRAINT FK_UserTicket FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT FK_AgentTicket FOREIGN KEY (agentID)
+        REFERENCES SupportAgent(agentID) ON DELETE SET NULL
 );
 
 /*-----------------------------*
  | SupportAgent Table Creation |
  *-----------------------------*/
 CREATE TABLE SupportAgent (
-    agentID    INTEGER PRIMARY KEY,
-    agentName  VARCHAR2(50),
-    agentEmail VARCHAR2(50)
+    agentID    INTEGER      PRIMARY KEY,
+    name       VARCHAR2(50) NOT NULL,
+    email      VARCHAR2(50) NOT NULL UNIQUE
 );
 
 /*--------------------------*
  | Workspace Table Creation |
  *--------------------------*/
 CREATE TABLE Workspace (
-    workspaceID   INTEGER PRIMARY KEY,
-    creatorID     INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    workSpaceName VARCHAR2(50),
-    privateStatus Number(1),
-    creationDate  DATE
+    workspaceID   INTEGER      PRIMARY KEY,
+    creatorID     INTEGER, -- FK to AppUser
+    "name"        VARCHAR2(50) NOT NULL,
+    privateStatus Number(1)    NOT NULL,
+    creationDate  DATE         NOT NULL,
+    CONSTRAINT FK_CreatorWorkspace FOREIGN KEY (creatorID)
+        REFERENCES ApplicationUser(userID) ON DELETE SET NULL
 );
 
 /*------------------------------------*
  | WorkspaceMembership Table Creation |
  *------------------------------------*/
 CREATE TABLE WorkspaceMembership (
-    userID      INTEGER PRIMARY KEY,
-    workspaceID INTEGER REFERENCES Workspace(workspaceID), -- FK to Workspace
-    joinDate    DATE
+    userID      INTEGER NOT NULL, -- FK to AppUser
+    workspaceID INTEGER NOT NULL, -- FK to Workspace
+    dateJoined  DATE    NOT NULL,
+    CONSTRAINT  PK_WorkspaceMembership PRIMARY KEY (userID, workspaceID),
+    CONSTRAINT  FK_UserWM FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT  FK_WM_Workspace FOREIGN KEY (workspaceID)
+        REFERENCES Workspace(workspaceID) ON DELETE CASCADE
 );
 
 /*-----------------------------*
@@ -100,44 +117,60 @@ CREATE TABLE WorkspaceMembership (
  *-----------------------------*/
 CREATE TABLE Conversation (
     conversationID INTEGER PRIMARY KEY,
-    userID         INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    workspaceID    INTEGER REFERENCES Workspace(workspaceID),  -- FK to Workspace
-    personaID      INTEGER REFERENCES Persona(personalID),     -- FK to Persona
-    title          VARCHAR2(50),
-    creationDate   DATE,
-    activeStatus   NUMBER(1)
+    userID         INTEGER, -- FK to AppUser
+    workspaceID    INTEGER, -- FK to Workspace
+    personaID      INTEGER, -- FK to Persona
+    title          VARCHAR2(50) NOT NULL,
+    creationDate   DATE         NOT NULL,
+    activeStatus   NUMBER(1)    NOT NULL,
+    CONSTRAINT FK_ConversationUser FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT FK_ConversationWorkSpace FOREIGN KEY (workspaceID)
+        REFERENCES Workspace(workspaceID) ON DELETE SET NULL,
+    CONSTRAINT FK_ConversationPersona FOREIGN KEY (personaID)
+        REFERENCES Persona(personalID) ON DELETE SET NULL
 );
 
 /*------------------------*
  | Message Table Creation |
  *------------------------*/
 CREATE TABLE Message (
-    messageID      INTEGER PRIMARY KEY,
-    conversationID INTEGER REFERENCES Conversation(conversationID), -- FK to Conversation
-    messageRole    VARCHAR2(20),
-    content        VARCHAR2(1000),
-    timeSent       TIMESTAMP
+    messageID      INTEGER        NOT NULL,
+    conversationID INTEGER        NOT NULL, -- FK to Conversation
+    role           VARCHAR2(20)   NOT NULL,
+    content        VARCHAR2(1000) NOT NULL,
+    timeSent       TIMESTAMP      NOT NULL,
+    CONSTRAINT PK_Message PRIMARY KEY (messageID, conversationID),
+    CONSTRAINT FK_MessageConversation FOREIGN KEY (conversationID)
+        REFERENCES Conversation(conversationID) ON DELETE CASCADE
 );
 
 /*-------------------------*
  | Feedback Table Creation |
  *-------------------------*/
 CREATE TABLE Feedback (
-    feedbackID    INTEGER PRIMARY KEY,
-    messageID     INTEGER REFERENCES Message(messageID), -- FK to Message
-    rating        Number(3),                             -- Rating between 0 and 100
-    feedbackText  VARCHAR2(1000),
-    timeSubmitted TIMESTAMP
+    feedbackID    INTEGER        NOT NULL,
+    messageID     INTEGER        NOT NULL, -- FK to Message
+    rating        VARCHAR(15)    NOT NULL, -- e.g. Thumbs Up/Thumbs Down
+    feedbackText  VARCHAR2(1000) NOT NULL,
+    timeSubmitted TIMESTAMP      NOT NULL,
+    CONSTRAINT PK_Feedback PRIMARY KEY (feedbackID, messageID),
+    CONSTRAINT FK_FeedbackMessage FOREIGN KEY (messageID)
+        REFERENCES Message(messageID) ON DELETE CASCADE
 );
 
 /*-------------------------*
  | Bookmark Table Creation |
  *-------------------------*/
 CREATE TABLE Bookmark (
-    userID         INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    messageID      INTEGER REFERENCES Message(messageID),      -- FK to Message
+    userID         INTEGER NOT NULL, -- FK to AppUser
+    messageID      INTEGER NOT NULL, -- FK to Message
     timeBookmarked TIMESTAMP,
-    CONSTRAINT PK_Bookmark PRIMARY KEY (userID, messageID)     -- Added combined primary key
+    CONSTRAINT PK_Bookmark PRIMARY KEY (userID, messageID), -- Added combined primary key
+    CONSTRAINT FK_BookmarkUser FOREIGN KEY (userID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT FK_BookmarkMessage FOREIGN KEY (messageID)
+        REFERENCES Message(messageID) ON DELETE CASCADE
 );
 
 /*------------------------*
@@ -145,10 +178,12 @@ CREATE TABLE Bookmark (
  *------------------------*/
 CREATE TABLE Persona (
     personalID   INTEGER PRIMARY KEY,
-    creatorID    INTEGER REFERENCES ApplicationUser(userID), -- FK to UserApp
-    personaName  VARCHAR2(50),
-    instructions VARCHAR2(500),
-    creationDate DATE
+    creatorID    INTEGER, -- FK to UserApp
+    "name"       VARCHAR2(50)  NOT NULL,
+    instructions VARCHAR2(500) NOT NULL,
+    creationDate DATE          NOT NULL,
+    CONSTRAINT FK_PersonaUser FOREIGN KEY (creatorID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE
 );
 
 /*-------------------------------*
@@ -156,11 +191,15 @@ CREATE TABLE Persona (
  *-------------------------------*/
 CREATE TABLE PromptTemplate (
     templateID    INTEGER PRIMARY KEY,
-    creatorID     INTEGER REFERENCES ApplicationUser(userID), -- FK to AppUser
-    workspaceID   INTEGER REFERENCES Workspace(workspaceID),  -- FK to Workspace
-    title         VARCHAR2(50),
-    content       VARCHAR2(1000),
-    category      VARCHAR2(50),
-    privateStatus NUMBER(1),
-    creationDate  DATE
+    creatorID     INTEGER, -- FK to AppUser
+    workspaceID   INTEGER,  -- FK to Workspace
+    title         VARCHAR2(50)   NOT NULL,
+    content       VARCHAR2(1000) NOT NULL,
+    category      VARCHAR2(50)   NOT NULL,
+    privateStatus NUMBER(1)      NOT NULL,
+    creationDate  DATE,
+    CONSTRAINT FK_PromptTemplateUser FOREIGN KEY (creatorID)
+        REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
+    CONSTRAINT FK_PromptTemplateWorkspace FOREIGN KEY
+        REFERENCES Workspace(workspaceID) ON DELETE SET NULL
 );
