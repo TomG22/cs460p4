@@ -2,18 +2,21 @@
  |
  |  Class Name:  PersonaManager
  |
- |  Purpose:  Manages AI personas for the LLM platform (Functionality 4).
- |            Personas define a personality or behavioral style for the
- |            assistant, driven by a system-level prompt string. Each
- |            persona is owned by a user and can be attached to messages.
+ |  Purpose:  Manages AI personas for the LLM platform (Functionality 5).
+ |            Personas define behavioral guidelines for the assistant via
+ |            an instructions string. Each persona is owned by a user and
+ |            can be attached to conversations. A persona cannot be deleted
+ |            if it is actively linked to more than five ongoing conversations.
  |
  |  Packages:  java.sql
  |             java.util.Scanner
  |
  |  Methods:
- |      menu()          - Displays sub-menu and routes to methods
- |      createPersona() - Adds a new persona to the database
- |      deletePersona() - Removes an existing persona from the database
+ |      menu()                - Displays sub-menu and routes to methods
+ |      createPersonaPrompt() - Collects input and calls createPersona()
+ |      deletePersonaPrompt() - Collects input and calls deletePersona()
+ |      createPersona()       - Inserts a new Persona row
+ |      deletePersona()       - Removes a Persona row if guard conditions pass
  |
  *---------------------------------------------------------------------------*/
 
@@ -73,19 +76,16 @@ public class PersonaManager {
     private static void createPersonaPrompt(Connection conn,
                                              Scanner scanner) throws SQLException {
         System.out.print("User ID: ");
-        int userId = Integer.parseInt(scanner.nextLine().trim()); // FK -> ApplicationUser
+        int creatorID = Integer.parseInt(scanner.nextLine().trim()); // FK -> ApplicationUser
 
         System.out.print("Persona name: ");
-        String name = scanner.nextLine().trim();                  // display name for this persona
+        String name = scanner.nextLine().trim();                     // display name for this persona
 
-        System.out.print("Description: ");
-        String description = scanner.nextLine().trim();           // short summary of the persona's style
+        System.out.print("Instructions: ");
+        String instructions = scanner.nextLine().trim();             // behavioral guidelines for the AI
 
-        System.out.print("System prompt: ");
-        String systemPrompt = scanner.nextLine().trim();          // full instruction string for the AI
-
-        int newId = createPersona(conn, userId, name, description, systemPrompt); // generated persona PK
-        if (newId != -1) {
+        int newID = createPersona(conn, creatorID, name, instructions); // generated personalID
+        if (newID != -1) {
             conn.commit();
         }
     }
@@ -99,7 +99,7 @@ public class PersonaManager {
      | Pre-condition:  A valid, open database connection is provided.
      |
      | Post-condition: The specified Persona row is removed and committed
-     |                 if it exists.
+     |                 if the active conversation guard passes.
      |
      | Parameters:
      |      conn    (in) - open Oracle database connection
@@ -110,9 +110,9 @@ public class PersonaManager {
     private static void deletePersonaPrompt(Connection conn,
                                              Scanner scanner) throws SQLException {
         System.out.print("Persona ID: ");
-        int personaId = Integer.parseInt(scanner.nextLine().trim()); // PK of persona to delete
+        int personalID = Integer.parseInt(scanner.nextLine().trim()); // PK of persona to delete
 
-        boolean success = deletePersona(conn, personaId); // result of the deletion attempt
+        boolean success = deletePersona(conn, personalID); // result of the deletion attempt
         if (success) {
             conn.commit();
         }
@@ -121,51 +121,47 @@ public class PersonaManager {
     /*-------------------------------------------------------------------------
      | Method: createPersona
      |
-     | Purpose: Creates a new AI persona that can be associated with messages
-     |          and conversations. Personas define a personality or behavioral
-     |          style for the assistant, driven by a system-level prompt.
+     | Purpose: Creates a new AI persona that can be attached to conversations.
+     |          Personas define behavioral guidelines for the assistant via
+     |          an instructions string.
      |
-     | Pre-condition:  A valid, open database connection is provided. userId
-     |                 must reference an existing User row. name must be
-     |                 non-null and non-empty.
+     | Pre-condition:  A valid, open database connection is provided. creatorID
+     |                 must reference an existing ApplicationUser row. name
+     |                 must be non-null and non-empty.
      |
      | Post-condition: A new Persona row is inserted into the database.
      |
      | Parameters:
      |      conn         (in) - open Oracle database connection
-     |      userId       (in) - ID of the user who owns this persona
+     |      creatorID    (in) - ID of the user who owns this persona
      |      name         (in) - display name of the persona (e.g. "Professor")
-     |      description  (in) - short summary of the persona's style
-     |      systemPrompt (in) - the full instruction string given to the AI
-     |                          when this persona is active
+     |      instructions (in) - behavioral guidelines string given to the AI
      |
-     | Returns:  the generated persona_id, or -1 on failure
+     | Returns:  the generated personalID, or -1 on failure
      *-----------------------------------------------------------------------*/
-    public static int createPersona(Connection conn, int userId,
-                                    String name, String description,
-                                    String systemPrompt) throws SQLException {
+    public static int createPersona(Connection conn, int creatorID,
+                                    String name, String instructions) throws SQLException {
         if (name == null || name.trim().isEmpty()) {
             System.out.println("Persona name must be non-empty.");
             return -1;
         }
 
-        String sql = "INSERT INTO Persona (user_id, name, description, " // parameterized INSERT
-                   + "system_prompt, created_at) "
-                   + "VALUES (?, ?, ?, ?, SYSDATE)";
+        String sql = "INSERT INTO Persona (personalID, creatorID, \"name\", " // parameterized INSERT
+                   + "instructions, creationDate) "
+                   + "VALUES (SEQ_PERSONA.NEXTVAL, ?, ?, ?, SYSDATE)";
 
-        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"persona_id"});
-        pstmt.setInt(1, userId);
+        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"personalID"});
+        pstmt.setInt(1, creatorID);
         pstmt.setString(2, name.trim());
-        pstmt.setString(3, description);
-        pstmt.setString(4, systemPrompt);
+        pstmt.setString(3, instructions);
         pstmt.executeUpdate();
 
-        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated persona_id
+        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated personalID
         if (rs.next()) {
-            int newId = rs.getInt(1); // the newly created persona's PK
-            System.out.println("Persona created with ID: " + newId);
+            int newID = rs.getInt(1); // the newly created persona's PK
+            System.out.println("Persona created with ID: " + newID);
             pstmt.close();
-            return newId;
+            return newID;
         }
 
         pstmt.close();
@@ -176,68 +172,61 @@ public class PersonaManager {
      | Method: deletePersona
      |
      | Purpose: Removes a persona record from the database, provided it is
-     |          not currently the active template for more than five ongoing
-     |          conversations. If the count exceeds five, deletion is aborted
-     |          and the user is informed. Because messages may reference this
-     |          persona, the persona_id foreign key on Message is set to NULL
-     |          on delete (as defined in the schema).
+     |          not currently attached to more than five active conversations.
+     |          If the count exceeds five, deletion is aborted and the user
+     |          is informed. Because Conversation references Persona with
+     |          ON DELETE SET NULL, any remaining references are nulled out.
      |
      | Pre-condition:  A valid, open database connection is provided.
-     |                 personaId must reference an existing Persona row.
-     |                 The schema's ON DELETE SET NULL constraint must be in
-     |                 place on Message.persona_id. Conversation table must
-     |                 have a persona_id column and a status column where
-     |                 'Open' indicates an ongoing conversation.
+     |                 personalID must reference an existing Persona row.
+     |                 Conversation.activeStatus = 1 indicates an ongoing
+     |                 conversation.
      |
      | Post-condition: If the active conversation count is 5 or fewer, the
-     |                 Persona row is removed and any Message rows that
-     |                 referenced it now have persona_id = NULL. Otherwise,
+     |                 Persona row is removed and any Conversation rows that
+     |                 referenced it now have personaID = NULL. Otherwise,
      |                 no changes are made to the database.
      |
      | Parameters:
-     |      conn      (in) - open Oracle database connection
-     |      personaId (in) - ID of the persona to delete
+     |      conn       (in) - open Oracle database connection
+     |      personalID (in) - ID of the persona to delete
      |
      | Returns:  true if the persona was deleted successfully, false otherwise
      *-----------------------------------------------------------------------*/
-    public static boolean deletePersona(Connection conn, int personaId) throws SQLException {
+    public static boolean deletePersona(Connection conn, int personalID) throws SQLException {
 
-        // Per spec: a persona cannot be deleted if it is the active template for
-        // more than five ongoing conversations. Query the count before attempting
-        // the delete.
-        // NOTE: assumes Conversation table has a persona_id column and a status
-        //       column where 'Open' indicates an ongoing conversation.
-        String countSql = "SELECT COUNT(*) FROM Conversation " // count active conversations using this persona
-                        + "WHERE persona_id = ? AND status = 'Open'";
+        // Per spec: abort deletion if persona is active in more than 5 ongoing conversations
+        String countSql = "SELECT COUNT(*) FROM Conversation "  // count active conversations using this persona
+                        + "WHERE personaID = ? AND activeStatus = 1";
 
         PreparedStatement countStmt = conn.prepareStatement(countSql);
-        countStmt.setInt(1, personaId);
+        countStmt.setInt(1, personalID);
 
-        ResultSet rs = countStmt.executeQuery();           // result of the active conversation count
+        ResultSet rs = countStmt.executeQuery();
         rs.next();
         int activeCount = rs.getInt(1); // number of ongoing conversations using this persona
         countStmt.close();
 
         if (activeCount > 5) {
-            System.out.println("Cannot delete persona " + personaId + ": currently active in "
+            System.out.println("Cannot delete persona " + personalID + ": currently active in "
                     + activeCount + " ongoing conversations (max 5 allowed).");
             return false;
         }
 
-        String sql = "DELETE FROM Persona WHERE persona_id = ?"; // targeted delete by PK
+        String sql = "DELETE FROM Persona WHERE personalID = ?"; // targeted delete by PK
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, personaId);
+        pstmt.setInt(1, personalID);
 
         int rows = pstmt.executeUpdate(); // number of rows deleted
         pstmt.close();
 
         if (rows == 1) {
-            System.out.println("Persona " + personaId + " deleted successfully.");
+            System.out.println("Persona " + personalID + " deleted successfully.");
             return true;
         }
 
-        System.out.println("No persona found with ID: " + personaId);
+        System.out.println("No persona found with ID: " + personalID);
         return false;
     }
 }

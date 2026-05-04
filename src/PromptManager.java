@@ -5,16 +5,18 @@
  |  Purpose:  Manages reusable prompt templates for the LLM platform
  |            (Functionality 5). Templates allow users to save and reuse
  |            commonly used prompt structures, optionally grouped by
- |            category. Templates can be created and updated in-place
- |            without replacing the entire record.
+ |            category and shared within a workspace. Templates can be
+ |            created and updated in-place without replacing the entire record.
  |
  |  Packages:  java.sql
  |             java.util.Scanner
  |
  |  Methods:
- |      menu()           - Displays sub-menu and routes to methods
- |      addTemplate()    - Inserts a new prompt template for a user
- |      updateTemplate() - Updates fields on an existing prompt template
+ |      menu()               - Displays sub-menu and routes to methods
+ |      addTemplatePrompt()  - Collects input and calls addTemplate()
+ |      updateTemplatePrompt() - Collects input and calls updateTemplate()
+ |      addTemplate()        - Inserts a new PromptTemplate row
+ |      updateTemplate()     - Updates fields on an existing PromptTemplate row
  |
  *---------------------------------------------------------------------------*/
 
@@ -75,32 +77,29 @@ public class PromptManager {
     private static void addTemplatePrompt(Connection conn,
                                           Scanner scanner) throws SQLException {
         System.out.print("User ID: ");
-        int userId = Integer.parseInt(scanner.nextLine().trim()); // FK -> ApplicationUser
+        int creatorID = Integer.parseInt(scanner.nextLine().trim()); // FK -> ApplicationUser
 
-        System.out.print("Template name: ");
-        String name = scanner.nextLine().trim();                  // short title for the template
+        System.out.print("Template title: ");
+        String title = scanner.nextLine().trim();                    // short title for the template
 
-        System.out.print("Template text: ");
-        String templateText = scanner.nextLine().trim();          // full prompt body
+        System.out.print("Template content: ");
+        String content = scanner.nextLine().trim();                  // full prompt body
 
-        System.out.print("Category (press Enter to skip): ");
-        String category = scanner.nextLine().trim();              // optional grouping label
-        if (category.isEmpty()) {
-            category = null; // treat empty input as no category
-        }
+        System.out.print("Category: ");
+        String category = scanner.nextLine().trim();                 // grouping label (required per schema)
 
-        System.out.print("Share this template within a workspace? (y/n): ");
-        boolean isShared = scanner.nextLine().trim().equalsIgnoreCase("y"); // whether template is shared
+        System.out.print("Make this template private? (y/n): ");
+        boolean isPrivate = scanner.nextLine().trim().equalsIgnoreCase("y"); // private or shared flag
 
         // Only prompt for a workspace ID if the template is being shared
-        int workspaceId = -1; // FK -> Workspace, -1 means private (no workspace)
-        if (isShared) {
+        int workspaceID = -1; // FK -> Workspace, -1 means no workspace (private)
+        if (!isPrivate) {
             System.out.print("Workspace ID to share within: ");
-            workspaceId = Integer.parseInt(scanner.nextLine().trim());
+            workspaceID = Integer.parseInt(scanner.nextLine().trim());
         }
 
-        int newId = addTemplate(conn, userId, name, templateText, category, isShared, workspaceId); // generated template PK
-        if (newId != -1) {
+        int newID = addTemplate(conn, creatorID, title, content, category, isPrivate, workspaceID); // generated templateID
+        if (newID != -1) {
             conn.commit();
         }
     }
@@ -126,23 +125,23 @@ public class PromptManager {
     private static void updateTemplatePrompt(Connection conn,
                                               Scanner scanner) throws SQLException {
         System.out.print("Template ID: ");
-        int templateId = Integer.parseInt(scanner.nextLine().trim()); // PK of template to update
+        int templateID = Integer.parseInt(scanner.nextLine().trim()); // PK of template to update
 
-        // Entering nothing for a field leaves it unchanged in the database
-        System.out.print("New name (press Enter to skip): ");
-        String newName = scanner.nextLine().trim();                   // replacement name, or empty
+        // Pressing Enter for any field leaves it unchanged in the database
+        System.out.print("New title (press Enter to skip): ");
+        String newTitle = scanner.nextLine().trim();                  // replacement title, or empty
 
-        System.out.print("New template text (press Enter to skip): ");
-        String newTemplateText = scanner.nextLine().trim();           // replacement body, or empty
+        System.out.print("New content (press Enter to skip): ");
+        String newContent = scanner.nextLine().trim();                // replacement body, or empty
 
         System.out.print("New category (press Enter to skip): ");
         String newCategory = scanner.nextLine().trim();               // replacement category, or empty
 
-        if (newName.isEmpty())         newName         = null;
-        if (newTemplateText.isEmpty()) newTemplateText = null;
-        if (newCategory.isEmpty())     newCategory     = null;
+        if (newTitle.isEmpty())    newTitle    = null;
+        if (newContent.isEmpty())  newContent  = null;
+        if (newCategory.isEmpty()) newCategory = null;
 
-        boolean success = updateTemplate(conn, templateId, newName, newTemplateText, newCategory); // result of update
+        boolean success = updateTemplate(conn, templateID, newTitle, newContent, newCategory); // result of update
         if (success) {
             conn.commit();
         }
@@ -152,74 +151,73 @@ public class PromptManager {
      | Method: addTemplate
      |
      | Purpose: Inserts a new reusable prompt template into the database.
-     |          Templates let users save commonly used prompt structures and
-     |          reference them later by name or category. A template may be
-     |          private to the user or shared within a specific workspace.
+     |          A template may be private to the user or shared within a
+     |          specific workspace, controlled by the privateStatus column.
      |
-     | Pre-condition:  A valid, open database connection is provided. userId
-     |                 must reference an existing User row. name and
-     |                 templateText must be non-null and non-empty. If
-     |                 isShared is true, workspaceId must reference an
+     | Pre-condition:  A valid, open database connection is provided. creatorID
+     |                 must reference an existing ApplicationUser row. title,
+     |                 content, and category must be non-null and non-empty.
+     |                 If isPrivate is false, workspaceID must reference an
      |                 existing Workspace row; otherwise pass -1.
      |
      | Post-condition: A new PromptTemplate row is inserted into the database.
      |
      | Parameters:
-     |      conn         (in) - open Oracle database connection
-     |      userId       (in) - ID of the user who owns this template
-     |      name         (in) - short identifier/title for the template
-     |      templateText (in) - the full prompt body (may include placeholders)
-     |      category     (in) - optional grouping label (may be null)
-     |      isShared     (in) - true if the template is shared within a workspace
-     |      workspaceId  (in) - FK to Workspace if shared, or -1 if private
+     |      conn        (in) - open Oracle database connection
+     |      creatorID   (in) - ID of the user who owns this template
+     |      title       (in) - short identifier/title for the template
+     |      content     (in) - the full prompt body (may include placeholders)
+     |      category    (in) - grouping label (required per schema)
+     |      isPrivate   (in) - true if template is private to the user
+     |      workspaceID (in) - FK to Workspace if shared, or -1 if private
      |
-     | Returns:  the generated template_id, or -1 on failure
+     | Returns:  the generated templateID, or -1 on failure
      *-----------------------------------------------------------------------*/
-    public static int addTemplate(Connection conn, int userId, String name,
-                                  String templateText, String category,
-                                  boolean isShared, int workspaceId) throws SQLException {
-        if (name == null || name.trim().isEmpty()) {
-            System.out.println("Template name must be non-empty.");
+    public static int addTemplate(Connection conn, int creatorID, String title,
+                                  String content, String category,
+                                  boolean isPrivate, int workspaceID) throws SQLException {
+        if (title == null || title.trim().isEmpty()) {
+            System.out.println("Template title must be non-empty.");
             return -1;
         }
-        if (templateText == null || templateText.trim().isEmpty()) {
-            System.out.println("Template text must be non-empty.");
+        if (content == null || content.trim().isEmpty()) {
+            System.out.println("Template content must be non-empty.");
             return -1;
         }
-
-        // NOTE: assumes PromptTemplate has is_shared (NUMBER(1)) and workspace_id (nullable) columns
-        String sql = "INSERT INTO PromptTemplate (user_id, name, "  // parameterized INSERT
-                   + "template_text, category, is_shared, workspace_id, created_at) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, SYSDATE)";
-
-        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"template_id"});
-        pstmt.setInt(1, userId);
-        pstmt.setString(2, name.trim());
-        pstmt.setString(3, templateText.trim());
-
         if (category == null || category.trim().isEmpty()) {
-            pstmt.setNull(4, Types.VARCHAR); // category is optional
-        } else {
-            pstmt.setString(4, category.trim());
+            System.out.println("Template category must be non-empty.");
+            return -1;
         }
 
-        if (isShared) pstmt.setInt(5, 1); // store shared as 1
-        else          pstmt.setInt(5, 0); // store private as 0
+        String sql = "INSERT INTO PromptTemplate "                          // parameterized INSERT
+                   + "(templateID, creatorID, workspaceID, title, content, "
+                   + "category, privateStatus, creationDate) "
+                   + "VALUES (SEQ_PROMPTTEMPLATE.NEXTVAL, ?, ?, ?, ?, ?, ?, SYSDATE)";
 
-        if (workspaceId < 0) {
-            pstmt.setNull(6, Types.INTEGER); // no workspace for private templates
+        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"templateID"});
+        pstmt.setInt(1, creatorID);
+
+        if (workspaceID < 0) {
+            pstmt.setNull(2, Types.INTEGER); // no workspace for private templates
         } else {
-            pstmt.setInt(6, workspaceId);    // FK -> Workspace
+            pstmt.setInt(2, workspaceID);    // FK -> Workspace
         }
+
+        pstmt.setString(3, title.trim());
+        pstmt.setString(4, content.trim());
+        pstmt.setString(5, category.trim());
+
+        if (isPrivate) pstmt.setInt(6, 1); // store private as 1
+        else           pstmt.setInt(6, 0); // store shared as 0
 
         pstmt.executeUpdate();
 
-        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated template_id
+        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated templateID
         if (rs.next()) {
-            int newId = rs.getInt(1); // the newly created template's PK
-            System.out.println("Template added with ID: " + newId);
+            int newID = rs.getInt(1); // the newly created template's PK
+            System.out.println("Template added with ID: " + newID);
             pstmt.close();
-            return newId;
+            return newID;
         }
 
         pstmt.close();
@@ -229,42 +227,41 @@ public class PromptManager {
     /*-------------------------------------------------------------------------
      | Method: updateTemplate
      |
-     | Purpose: Updates an existing prompt template's name, body text, and/or
+     | Purpose: Updates an existing prompt template's title, content, and/or
      |          category. Only fields with non-null values are changed; passing
      |          null for a field leaves it unchanged in the database.
      |
-     | Pre-condition:  A valid, open database connection is provided. templateId
+     | Pre-condition:  A valid, open database connection is provided. templateID
      |                 must reference an existing PromptTemplate row. At least
-     |                 one of newName, newTemplateText, or newCategory should
-     |                 be non-null to make a meaningful update.
+     |                 one of newTitle, newContent, or newCategory should be
+     |                 non-null to make a meaningful update.
      |
      | Post-condition: The matching PromptTemplate row is updated in the database.
      |
      | Parameters:
-     |      conn            (in) - open Oracle database connection
-     |      templateId      (in) - ID of the template to update
-     |      newName         (in) - replacement name, or null to leave unchanged
-     |      newTemplateText (in) - replacement body text, or null to leave unchanged
-     |      newCategory     (in) - replacement category, or null to leave unchanged
+     |      conn        (in) - open Oracle database connection
+     |      templateID  (in) - ID of the template to update
+     |      newTitle    (in) - replacement title, or null to leave unchanged
+     |      newContent  (in) - replacement content, or null to leave unchanged
+     |      newCategory (in) - replacement category, or null to leave unchanged
      |
      | Returns:  true if the template was updated successfully, false otherwise
      *-----------------------------------------------------------------------*/
-    public static boolean updateTemplate(Connection conn, int templateId,
-                                         String newName,
-                                         String newTemplateText,
+    public static boolean updateTemplate(Connection conn, int templateID,
+                                         String newTitle, String newContent,
                                          String newCategory) throws SQLException {
         StringBuilder setClauses = new StringBuilder(); // accumulates SET assignments dynamically
         int paramCount = 0;                             // tracks how many fields will be updated
 
-        if (newName != null && !newName.trim().isEmpty()) {
-            setClauses.append("name = ?, ");
+        if (newTitle != null && !newTitle.trim().isEmpty()) {
+            setClauses.append("title = ?, ");
             paramCount++;
         }
-        if (newTemplateText != null && !newTemplateText.trim().isEmpty()) {
-            setClauses.append("template_text = ?, ");
+        if (newContent != null && !newContent.trim().isEmpty()) {
+            setClauses.append("content = ?, ");
             paramCount++;
         }
-        if (newCategory != null) {
+        if (newCategory != null && !newCategory.trim().isEmpty()) {
             setClauses.append("category = ?, ");
             paramCount++;
         }
@@ -276,36 +273,32 @@ public class PromptManager {
 
         String setClause = setClauses.substring(0, setClauses.length() - 2); // strip trailing ", "
         String sql = "UPDATE PromptTemplate SET " + setClause                 // final UPDATE statement
-                   + " WHERE template_id = ?";
+                   + " WHERE templateID = ?";
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
         int idx = 1; // current parameter index for binding
 
-        if (newName != null && !newName.trim().isEmpty()) {
-            pstmt.setString(idx++, newName.trim());
+        if (newTitle != null && !newTitle.trim().isEmpty()) {
+            pstmt.setString(idx++, newTitle.trim());
         }
-        if (newTemplateText != null && !newTemplateText.trim().isEmpty()) {
-            pstmt.setString(idx++, newTemplateText.trim());
+        if (newContent != null && !newContent.trim().isEmpty()) {
+            pstmt.setString(idx++, newContent.trim());
         }
-        if (newCategory != null) {
-            if (newCategory.trim().isEmpty()) {
-                pstmt.setNull(idx++, Types.VARCHAR); // clear the category field
-            } else {
-                pstmt.setString(idx++, newCategory.trim());
-            }
+        if (newCategory != null && !newCategory.trim().isEmpty()) {
+            pstmt.setString(idx++, newCategory.trim());
         }
 
-        pstmt.setInt(idx, templateId);
+        pstmt.setInt(idx, templateID);
 
         int rows = pstmt.executeUpdate(); // number of rows updated
         pstmt.close();
 
         if (rows == 1) {
-            System.out.println("Template " + templateId + " updated successfully.");
+            System.out.println("Template " + templateID + " updated successfully.");
             return true;
         }
 
-        System.out.println("No template found with ID: " + templateId);
+        System.out.println("No template found with ID: " + templateID);
         return false;
     }
 }

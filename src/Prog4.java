@@ -39,10 +39,13 @@
  |       Output:  Confirmation messages, query results, and error descriptions
  |                are printed to stdout.
  |
- |   Techniques:  JDBC PreparedStatements for all DML,
- |                Oracle sequences for primary key generation,
- |                Oracle MERGE for insert-or-update feedback operations
+ |   Techniques:  JDBC PreparedStatements for all DML; Oracle sequences for
+ |                primary key generation; Oracle MERGE for feedback upserts.
  |                Manager classes separate concerns by functional area.
+ |
+ |   Required Features Not Included:  All required features are included.
+ |
+ |   Known Bugs:  None.
  |
  *---------------------------------------------------------------------------*/
 
@@ -141,7 +144,7 @@ public class Prog4 {
      | Returns: Nothing
      *-----------------------------------------------------------------------*/
     private static void showMenu() {
-        System.out.println("\n------ LLM Menu ------"); 
+        System.out.println("\n========== LLM Menu ==========");
         System.out.println("1. User accounts");
         System.out.println("2. Conversations & messages");
         System.out.println("3. Workspaces");
@@ -152,5 +155,6 @@ public class Prog4 {
         System.out.println("8. Support tickets");
         System.out.println("9. Run a query");
         System.out.println("0. Quit");
+        System.out.println("===================================");
     }
 }
