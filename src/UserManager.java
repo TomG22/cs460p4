@@ -18,14 +18,15 @@
  |                 Run:     java Prog4 [username] [password]
  |
  +-----------------------------------------------------------------------------
- |  Description:  This program provides functions that 
+ |  Description:  This program provides functions that, in tandem with functions in other program files
+ |              allow the user to interact with the Oracle SQL DB containing client data, and perform tasks
+ |              described in the project spec. Functions in this program file are all related to user actions,
+ |              including adding users to DB, removing users from DB, creating invoices for users, etc.
  |
  |
- |        Input: fileName.csv - a csv file that (if non-empty) contains data in
- |               the 11 data fields from the given bat cave dataset
+ |        Input: User input via scanner.
  |
- |       Output: fileName.bin - a binary file containing the data from the csv
- |               file.
+ |       Output: Text output containing DB data or response messages after executing actions.
  |
  |   Techniques: JDBC utilization for interacting with an Oracle SQL DB
  |
@@ -35,6 +36,23 @@
  |
  *---------------------------------------------------------------------------*/
 public class UserOptions {
+    /*-------------------------------------------------------------------------
+     | Method: options
+     |
+     | Purpose: Displays the user action menu and processes the user's
+     |          choice to the right query method.
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     public static void options(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("\n--- User Options ---");
         System.out.println("1. Add a user");
@@ -58,6 +76,25 @@ public class UserOptions {
 
     }
 
+    /*-------------------------------------------------------------------------
+     | Method: addUser
+     |
+     | Purpose: Adds a user record to the ApplicationUser relation within
+     |          the Oracle SQL DB. Asks user to provide relevant information
+     |          via the scanner object. A billing profile for the new user is
+     |          also created.
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void addUser(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User's name: ");
         String name = scanner.nextLine().trim();
@@ -70,6 +107,15 @@ public class UserOptions {
 
         System.out.println("User's membership tier (Free, Plus, Enterprise): ");
         String tier = scanner.nextLine().trim().toLowerCase();
+        
+        String queryTier = "SELECT tierID FROM membershipTier WHERE tierName = ?";
+        PreparedStatement stmtTier = conn.prepareStatement(queryTier);
+        stmtTier.setString(1, tier);
+        ResultSet tierResult = stmtTier.executeQuery();
+        int tierID = tierResult.getInt(1);
+        tierResult.close();
+        stmt.close();
+
 
         int userID = WorkspaceManager.nextVal(conn, "SEQ_USER");
 
@@ -105,6 +151,25 @@ public class UserOptions {
         System.out.println("User " + userID + " created. Associated billing information saved.");
     }
 
+    /*-------------------------------------------------------------------------
+     | Method: updateUserTier
+     |
+     | Purpose: Performs an update to the record in the ApplicationUser
+     |          relation, being a change to the tierID field corresponding
+     |          to the ID of the provided new tier for the user.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void updateUserTier(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
@@ -137,6 +202,25 @@ public class UserOptions {
         }
     }
     
+    /*-------------------------------------------------------------------------
+     | Method: deleteUser
+     |
+     | Purpose: Removes a user's record from the ApplicationUser relation,
+     |          pending passes of two deletion conditions: 0 unpaid invoices
+     |          and 0 open support tickets.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void deleteUser(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
@@ -200,11 +284,29 @@ public class UserOptions {
             return;        
         }
         stmtDel.close();
-        //Delete relevant items associated with user () ??
 
         conn.commit();
     }
 
+    /*-------------------------------------------------------------------------
+     | Method: checkRateLimit
+     |
+     | Purpose: Performs a query to the client DB, simply looking for the
+     |          messages per day limit associated with a user in the DB,
+     |          based on their membership tier.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void checkRateLimit(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
@@ -226,6 +328,25 @@ public class UserOptions {
         stmt.close();
     }
 
+    /*-------------------------------------------------------------------------
+     | Method: generateInvoice
+     |
+     | Purpose: Creates a new invoice record in the Invoice relation of the DB
+     |          for a provided user. The user is prompted for relevant information
+     |          beyond userID to create the invoice.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void generateInvoice(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
@@ -254,6 +375,25 @@ public class UserOptions {
         }
     }
 
+    /*-------------------------------------------------------------------------
+     | Method: markInvoicePaid
+     |
+     | Purpose: Performs an update to the record in the Invoice
+     |          relation, being a change to the paymentStatus field
+     |          corresponding to the ID of the provided invoice.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
     private static void markInvoicePaid(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
