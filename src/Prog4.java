@@ -107,16 +107,16 @@ public class Prog4 {
             String choice = scanner.nextLine().trim(); // user's menu selection this iteration
 
             switch (choice) {
-                case "1":  UserManager.menu(dbConnection, scanner);         break;
-                case "2":  ConversationManager.menu(dbConnection, scanner); break;
-                case "3":  WorkspaceManager.menu(dbConnection, scanner);    break;
-                case "4":  PersonaManager.menu(dbConnection, scanner);      break;
-                case "5":  PromptManager.menu(dbConnection, scanner);       break;
+                case "1":  UserManager.menu(dbConnection, scanner);             break;
+                case "2":  ConversationManager.menu(dbConnection, scanner);     break;
+                case "3":  WorkspaceManager.menu(dbConnection, scanner);        break;
+                case "4":  PersonaManager.menu(dbConnection, scanner);          break;
+                case "5":  PromptManager.menu(dbConnection, scanner);           break;
                 case "6":  UserManager.subscriptionMenu(dbConnection, scanner); break;
-                case "7":  UserManager.billingMenu(dbConnection, scanner);  break;
-                case "8":  TicketManager.menu(dbConnection, scanner);       break;
-                case "9":  QueryManager.menu(dbConnection, scanner);        break;
-                case "0":  stillGoing = false;                              break;
+                case "7":  UserManager.billingMenu(dbConnection, scanner);      break;
+                case "8":  TicketManager.menu(dbConnection, scanner);           break;
+                case "9":  QueryManager.menu(dbConnection, scanner);            break;
+                case "0":  stillGoing = false;                                  break;
                 default:   System.out.println("Invalid choice. Please enter 0-9.");
             }
         }

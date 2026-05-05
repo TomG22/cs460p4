@@ -1,3 +1,9 @@
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
+
 /*-----------------------------------------------------------------------------
  |    Assignment:  Program #4 - Database Design and Implementation
  |       Authors:  Gabriel I. Hernandez (gabehernandez07@arizona.edu)
@@ -37,7 +43,7 @@
  *---------------------------------------------------------------------------*/
 public class UserManager {
     /*-------------------------------------------------------------------------
-     | Method: options
+     | Method: menu
      |
      | Purpose: Displays the user action menu and processes the user's
      |          choice to the right query method.
@@ -53,27 +59,81 @@ public class UserManager {
      |
      | Returns: Nothing
      *-----------------------------------------------------------------------*/
-    public static void options(Connection conn, Scanner scanner) throws SQLException {
+    public static void menu(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("\n--- User Options ---");
         System.out.println("1. Add a user");
         System.out.println("2. Update an existing user's membership tier");
         System.out.println("3. Delete a user");
-        System.out.println("4. See a user's rate limit");
-        System.out.println("5. Create an invoice");
-        System.out.println("6. Update invoice payment status");
         System.out.println("Choice: ");
 
-        String input = scanner.nextInt();
+        int input = Integer.parseInt(scanner.nextLine().trim());
         switch (input) {
             case 1: addUser(conn, scanner); break;
             case 2: updateUserTier(conn, scanner); break;
             case 3: deleteUser(conn, scanner); break;
-            case 4: checkRateLimit(conn, scanner); break;
-            case 5: generateInvoice(conn, scanner); break;
-            case 6: markInvoicePaid(conn, scanner); break;
-            default: System.out.println("Invalid Choice: (Enter 1-6)");
+            default: System.out.println("Invalid Choice: (Enter 1-3)");
         }
 
+    }
+
+    /*-------------------------------------------------------------------------
+     | Method: subscriptionMenu
+     |
+     | Purpose: Displays the user subscription menu and processes the user's
+     |          choice to the right query method
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
+    public static void subscriptionMenu(Connection conn, Scanner scanner) throws SQLException {
+        System.out.println("\n--- Subscription Tracking ---");
+        System.out.println("1. Update subscription");
+        System.out.println("2. See a user's rate limit");
+        System.out.println("Choice: ");
+        String input = scanner.nextLine().trim();
+        switch (input) {
+            case "1": updateUserTier(conn, scanner); break;
+            case "2": checkRateLimitPrompt(conn, scanner); break;
+            default: System.out.println("Invalid Choice: (Enter 1-2)");
+        }
+    }
+
+    /*-------------------------------------------------------------------------
+     | Method: billingMenu
+     |
+     | Purpose: Displays the user billing menu and processes the user's
+     |          choice to the right query method
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
+    public static void billingMenu(Connection conn, Scanner scanner) throws SQLException {
+        System.out.println("\n--- Billing Operations ---");
+        System.out.println("1. Generate new Invoice");
+        System.out.println("2. Mark Invoice Paid");
+        System.out.println("Choice: ");
+        String input = scanner.nextLine().trim();
+        switch (input) {
+            case "1": generateInvoice(conn, scanner); break;
+            case "2": markInvoicePaid(conn, scanner); break;
+            default: System.out.println("Invalid Choice: (Enter 1-2)");
+        }
     }
 
     /*-------------------------------------------------------------------------
@@ -114,7 +174,7 @@ public class UserManager {
         ResultSet tierResult = stmtTier.executeQuery();
         int tierID = tierResult.getInt(1);
         tierResult.close();
-        stmt.close();
+        stmtTier.close();
 
 
         int userID = WorkspaceManager.nextVal(conn, "SEQ_USER");
@@ -125,7 +185,7 @@ public class UserManager {
         stmt.setString(2, name);
         stmt.setString(3, email);
         stmt.setString(4, lang);
-        stmt.setString(5, tierID);
+        stmt.setString(5, String.valueOf(tierID));
         stmt.executeUpdate();
         stmt.close();
 
@@ -275,7 +335,7 @@ public class UserManager {
         String queryDel = "DELETE FROM ApplicationUser WHERE userID = ?";
         PreparedStatement stmtDel = conn.prepareStatement(queryDel);
         stmtDel.setInt(1, userID);
-        int numDeleted = stmtDel.executeQuery();
+        int numDeleted = stmtDel.executeUpdate();
         if (numDeleted > 0) {
             System.out.println("User " + userID + " deleted.");
         }
@@ -289,7 +349,79 @@ public class UserManager {
     }
 
     /*-------------------------------------------------------------------------
+     | Method: checkRateLimitPrompt
+     |
+     | Purpose: Simply requests the user's id and displays the max amount of
+     |          messages the user's subscription allots.
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      scanner  - Scanner object for reading user input
+     |
+     | Returns: Nothing
+     *-----------------------------------------------------------------------*/
+    private static void checkRateLimitPrompt(Connection conn, Scanner scanner) throws SQLException {
+        System.out.println("User ID: ");
+        int userID = Integer.parseInt(scanner.nextLine().trim());
+        int msgLimit = getRateLimit(conn, userID);
+        if (msgLimit >= 0) {
+            System.out.println("Max message limit for user " + userID + " is: " + msgLimit + ".");
+        } else {
+            System.out.println("User " + userID + " does not exist.");
+        }
+    }
+
+    /*-------------------------------------------------------------------------
      | Method: checkRateLimit
+     |
+     | Purpose: Performs a query to the client DB, getting the amount of
+     |          messages a user has sent today. This is compared to the max
+     |          daily amount of messages for the user's subscription.
+     |
+     |
+     | Pre-condition:  A valid, open database connection is provided.
+     |
+     | Post-condition: The action selected by the user is performed
+     |                 and accurate output is displayed.
+     |
+     | Parameters:
+     |      conn     - open Oracle database connection
+     |      userID   - int holding the correct userID
+     |
+     | Returns:
+     |      bool - true if the user still has messages left in the day,
+     |             false otherwise
+     *-----------------------------------------------------------------------*/
+    public static boolean checkRateLimit(Connection conn, int userID) throws SQLException {
+        int msgLimit = getRateLimit(conn, userID);
+        if (msgLimit < 0) return false; // Check for the user not existing
+
+        // Counting the amount of messages the user has sent today
+        String countQuery = "SELECT COUNT(*) " +
+                "FROM Message m " +
+                "JOIN Conversation c" +
+                "ON m.conversationID = c.conversationID " +
+                "WHERE c.userID = ? " +
+                "AND TRUNC(m.timeSent) = TRUNC(SYSDATE) " +
+                "AND m.role = 'user'";
+
+        PreparedStatement stmt = conn.prepareStatement(countQuery);
+        stmt.setInt(1, userID);
+        ResultSet results = stmt.executeQuery();
+        results.next();
+        int msgCount = results.getInt(1);
+        results.close();
+        stmt.close();
+        return msgCount < msgLimit;
+    }
+
+    /*-------------------------------------------------------------------------
+     | Method: getRateLimit
      |
      | Purpose: Performs a query to the client DB, simply looking for the
      |          messages per day limit associated with a user in the DB,
@@ -303,29 +435,29 @@ public class UserManager {
      |
      | Parameters:
      |      conn     - open Oracle database connection
-     |      scanner  - Scanner object for reading user input
+     |      userID   - int holding the correct userID
      |
-     | Returns: Nothing
+     | Returns:
+     |      limit - the max amount of daily messages a user gets based on their
+     |              subscription tier, or -1 if user not found
      *-----------------------------------------------------------------------*/
-    private static void checkRateLimit(Connection conn, Scanner scanner) throws SQLException {
-        System.out.println("User ID: ");
-        int userID = scanner.nextInt();
-
-        String query = "SELECT mt.maxMessagesPerDay AS rate " + 
-                       "FROM MembershipTier mt " + 
-                       "JOIN ApplicationUser au " +
-                       "ON mt.userID = au.userID " +
-                       "WHERE au.userID = ?";
+    private static int getRateLimit(Connection conn, int userID) throws SQLException {
+        // Slight change, joined on tierID instead of userID
+        String query = "SELECT mt.maxMessagesPerDay AS rate " +
+                "FROM MembershipTier mt " +
+                "JOIN ApplicationUser au " +
+                "ON mt.tierID = au.tierID " +
+                "WHERE au.userID = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);
-        ResultSet results = stmt.executeQuery();
-
-        System.out.println("\n--- Rate Limit for User " + userID + " ---");
-        results.next();
-        System.out.println(results.getInt("rate") + " messages per day.");
-
-        results.close();
-        stmt.close();
+        ResultSet res = stmt.executeQuery();
+        if (res.next()) {
+            int limit = res.getInt("rate");
+            res.close();
+            return limit;
+        }
+        res.close();
+        return - 1;
     }
 
     /*-------------------------------------------------------------------------

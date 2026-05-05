@@ -1,5 +1,8 @@
 /*---------------------------------------------------------------*
- | Author: Gabriel Hernandez                                     |
+ | Authors: Gabriel I. Hernandez (gabehernandez07@arizona.edu)   |
+ |          Andrew Barnica (asbarnica@arizona.edu)               |
+ |          Tom Giallanza (giallanza1@arizona.edu)               |
+ |          Helena Musial (helenamusial@arizona.edu)             |
  | File Name: schema.sql                                         |
  | Creation Date: 05-02-2026                                     |
  | Description: SQL queries to create the tables associated with |
@@ -212,17 +215,17 @@ CREATE TABLE PromptTemplate (
 -------------------------------
 -- Sequence Creation Queries --
 -------------------------------
-CREATE SEQUENCE MembershipTier_SEQ      START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE ApplicationUser_SEQ     START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE BillingProfile_SEQ      START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Invoice_SEQ             START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE SupportAgent_SEQ        START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE SupportTicket_SEQ       START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Workspace_SEQ           START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE WorkspaceMembership_SEQ START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Persona_SEQ             START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Conversation_SEQ        START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Message_SEQ             START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Feedback_SEQ            START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE Bookmark_SEQ            START WITH 1 INCREMENT BY 1
-CREATE SEQUENCE PromptTemplate_SEQ      START WITH 1 INCREMENT BY 1
+CREATE SEQUENCE SEQ_TIER           START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_USER           START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_BILLING        START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_INVOICE        START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_AGENT          START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_TICKET         START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_WORKSPACE      START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_MEMBERSHIP     START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_PERSONA        START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_CONVERSATION   START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_MESSAGE        START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_FEEDBACK       START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_BOOKMARK       START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE SEQ_PROMPTTEMPLATE START WITH 1 INCREMENT BY 1;
