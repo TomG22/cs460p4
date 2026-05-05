@@ -156,7 +156,7 @@ public class QueryManager {
                      "FROM ApplicationUser u " +
                      "JOIN Invoice i      ON u.userID = i.userID " +
                      "LEFT JOIN Conversation c ON u.userID = c.userID " +
-                     "WHERE i.paymentStatus = 'Unpaid' " +
+                     "WHERE i.paymentStatus = 0 " +   // 0 = Unpaid
                      "GROUP BY u.userID, u.email " +
                      "ORDER BY totalOwed DESC";
 
@@ -224,7 +224,7 @@ public class QueryManager {
                              "JOIN Conversation c ON p.personalID     = c.personalID " +
                              "JOIN Message m      ON c.conversationID = m.conversationID " +
                              "JOIN Feedback f     ON m.messageID      = f.messageID " +
-                             "WHERE p.name = ? AND f.rating = 'Thumbs Up'";
+                             "WHERE p.name = ? AND f.rating = 1"; // 1 = Thumbs Up
 
         Statement stmt = conn.createStatement();
         ResultSet allPersonas = stmt.executeQuery(totalSql);
@@ -325,7 +325,7 @@ public class QueryManager {
                          "FROM Persona p " +
                          "JOIN Conversation c ON p.personalID     = c.personalID " +
                          "JOIN Message m      ON c.conversationID = m.conversationID " +
-                         "WHERE UPPER(p.name) = UPPER(?) AND m.role = 'User'";
+                         "WHERE UPPER(p.name) = UPPER(?) AND m.role = 'user'"; 
 
         PreparedStatement pstmt2 = conn.prepareStatement(userSql);
         pstmt2.setString(1, personaName);
