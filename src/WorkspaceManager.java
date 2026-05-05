@@ -95,8 +95,8 @@ public class WorkspaceManager {
         System.out.print("Workspace name: ");
         String workspaceName = scanner.nextLine().trim(); // display name of the workspace
 
-        System.out.print("Private? (Y/N): ");
-        String privateStatus = scanner.nextLine().trim().toUpperCase(); // 'Y' or 'N'
+        System.out.print("Private? (1 = yes, 0 = no): ");
+        int privateStatus = Integer.parseInt(scanner.nextLine().trim()); // 1 = private, 0 = public
 
         int workspaceID = nextVal(conn, "SEQ_WORKSPACE"); // generated PK for new workspace
 
@@ -105,7 +105,7 @@ public class WorkspaceManager {
         PreparedStatement pstmt = conn.prepareStatement(insertWorkspace);
         pstmt.setInt(1, workspaceID);
         pstmt.setString(2, workspaceName);
-        pstmt.setString(3, privateStatus);
+        pstmt.setInt(3, privateStatus);
         pstmt.setInt(4, creatorID);
         pstmt.executeUpdate();
         pstmt.close();
