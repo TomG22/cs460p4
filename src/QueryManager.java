@@ -211,12 +211,12 @@ public class QueryManager {
     private static void queryMostHelpfulPersona(Connection conn) throws SQLException {
 
         // Get every persona that has received feedback, with its total count.
-        String totalSql = "SELECT p.name AS personaName, COUNT(f.feedbackID) AS totalFeedback " +
+        String totalSql = "SELECT p.\"name\" AS personaName, COUNT(f.feedbackID) AS totalFeedback " +
                           "FROM Persona p " +
                           "JOIN Conversation c ON p.personalID     = c.personalID " +
                           "JOIN Message m      ON c.conversationID = m.conversationID " +
                           "JOIN Feedback f     ON m.messageID      = f.messageID " +
-                          "GROUP BY p.personalID, p.name";
+                          "GROUP BY p.personalID, p.\"name\"";
 
         // For a specific persona, count only the Thumbs Up ratings.
         String thumbsUpSql = "SELECT COUNT(f.feedbackID) AS thumbsUpCount " +
@@ -224,7 +224,7 @@ public class QueryManager {
                              "JOIN Conversation c ON p.personalID     = c.personalID " +
                              "JOIN Message m      ON c.conversationID = m.conversationID " +
                              "JOIN Feedback f     ON m.messageID      = f.messageID " +
-                             "WHERE p.name = ? AND f.rating = 1"; // 1 = Thumbs Up
+                             "WHERE p.\"name\" = ? AND f.rating = 1"; // 1 = Thumbs Up
 
         Statement stmt = conn.createStatement();
         ResultSet allPersonas = stmt.executeQuery(totalSql);
@@ -303,7 +303,7 @@ public class QueryManager {
                           "FROM Persona p " +
                           "JOIN Conversation c ON p.personalID     = c.personalID " +
                           "JOIN Message m      ON c.conversationID = m.conversationID " +
-                          "WHERE UPPER(p.name) = UPPER(?)";
+                          "WHERE UPPER(p.\"name\") = UPPER(?)";
 
         PreparedStatement pstmt1 = conn.prepareStatement(totalSql);
         pstmt1.setString(1, personaName);
@@ -346,7 +346,7 @@ public class QueryManager {
                              "FROM Persona p " +
                              "JOIN Conversation c ON p.personalID      = c.personalID " +
                              "JOIN Message m      ON c.conversationID  = m.conversationID " +
-                             "WHERE UPPER(p.name) = UPPER(?) " +
+                             "WHERE UPPER(p.\"name\") = UPPER(?) " +
                              "GROUP BY c.conversationID, c.title " +
                              "ORDER BY messageCount DESC"; // most messages comes first
 
