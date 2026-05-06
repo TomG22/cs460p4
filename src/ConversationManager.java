@@ -261,7 +261,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int addMessage(Connection conn, int conversationID,
                                  String role, String content) throws SQLException {
-        String sql = "INSERT INTO assbarnica.Message (messageID, conversationID, role, content, timeSent) " // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.Message (messageID, conversationID, role, content, timeSent) " // parameterized INSERT
                    + "VALUES (SEQ_MESSAGE.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
         PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"messageID"});
@@ -313,22 +313,22 @@ public class ConversationManager {
         // NOTE: Feedback has a composite PK (feedbackID, messageID); we match on messageID only
         //       since one feedback row per message is the intended design.
         String sql = "MERGE INTO asbarnica.Feedback f "                               // insert or update feedback row
-                   + "USING (SELECT ? AS messageID FROM dual) src "
+                   + "USING (SELECT messageID FROM dual) src "
                    + "ON (f.messageID = src.messageID) "
                    + "WHEN MATCHED THEN "
                    + "  UPDATE SET f.rating = ?, f.feedbackText = ?, "
                    + "             f.timeSubmitted = SYSTIMESTAMP "
                    + "WHEN NOT MATCHED THEN "
-                   + "  INSERT (feedbackID, messageID, rating, feedbackText, timeSubmitted) "
+                   + "  INSERT (feedbackID, messageID,s rating, feedbackText, timeSubmitted) "
                    + "  VALUES (SEQ_FEEDBACK.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, messageID);       // USING clause source value
-        pstmt.setString(2, rating);       // UPDATE: new rating
-        pstmt.setString(3, feedbackText); // UPDATE: new feedback text
-        pstmt.setInt(4, messageID);       // INSERT: message FK
-        pstmt.setString(5, rating);       // INSERT: initial rating
-        pstmt.setString(6, feedbackText); // INSERT: initial feedback text
+        pstmt.setString(1, rating);       // UPDATE: new rating
+        pstmt.setString(2, feedbackText); // UPDATE: new feedback text
+        pstmt.setInt(3, messageID);       // INSERT: message FK
+        
+        pstmt.setString(4, rating);       // INSERT: initial rating
+        pstmt.setString(5, feedbackText); // INSERT: initial feedback text
 
         int rows = pstmt.executeUpdate(); // number of rows affected by MERGE
         pstmt.close();
