@@ -234,15 +234,16 @@ public class UserManager {
     private static void updateUserTier(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
-
+        scanner.nextLine();
         System.out.println("User " + userID + "'s new membership tier (Free, Plus, Enterprise): ");
-        String tier = scanner.nextLine();
+        String tier = scanner.nextLine().trim().toLowerCase();
 
         //Fetch tierID from MembershipTier table with matching tier name
         String query = "SELECT tierID FROM asbarnica.MembershipTier WHERE name = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setString(1, tier);
         ResultSet tierResult = stmt.executeQuery();
+        tierResult.next();
         int tierID = tierResult.getInt(1);
         tierResult.close();
         stmt.close();
@@ -311,15 +312,15 @@ public class UserManager {
         }
 
         //2. Cannot delete user if they have open support tickets
-        String querySup = "SELECT outcome FROM asbarnica.Invoice WHERE userID = ?";
+        String querySup = "SELECT outcome FROM asbarnica.SupportTicket WHERE userID = ?";
         PreparedStatement stmtSup = conn.prepareStatement(querySup);
         stmtSup.setInt(1, userID);
         ResultSet supResult = stmtSup.executeQuery();
         boolean hasOpen = false;
 
         while (supResult.next()) {
-            int outcomeStatus = supResult.getInt("outcome");
-            if (outcomeStatus == 0) {
+            String outcomeStatus = supResult.getString("outcome");
+            if (outcomeStatus.equals("Open")) {
                 hasOpen = true;
                 break;
             }
