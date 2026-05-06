@@ -94,7 +94,7 @@ public class TicketManager {
         int ticketID = WorkspaceManager.nextVal(conn, "SEQ_TICKET"); // generated PK
 
         // agentID starts NULL, resolutionDays NULL, outcome 'Open'
-        String insertSql = "INSERT INTO SupportTicket VALUES (?, ?, NULL, ?, SYSDATE, NULL, 'Open')";
+        String insertSql = "INSERT INTO asbarnica.SupportTicket VALUES (?, ?, NULL, ?, SYSDATE, NULL, 'Open')";
         PreparedStatement pstmt = conn.prepareStatement(insertSql);
         pstmt.setInt(1, ticketID);
         pstmt.setInt(2, userID);
@@ -130,7 +130,7 @@ public class TicketManager {
         System.out.print("Agent ID: ");
         int agentID = Integer.parseInt(scanner.nextLine().trim()); // FK -> SupportAgent
 
-        String updateSql = "UPDATE SupportTicket SET agentID = ? WHERE ticketID = ?";
+        String updateSql = "UPDATE asbarnica.SupportTicket SET agentID = ? WHERE ticketID = ?";
         PreparedStatement pstmt = conn.prepareStatement(updateSql);
         pstmt.setInt(1, agentID);
         pstmt.setInt(2, ticketID);
@@ -174,7 +174,7 @@ public class TicketManager {
         System.out.print("Number of days to resolve: ");
         int resolutionDays = Integer.parseInt(scanner.nextLine().trim()); // duration of resolution
 
-        String updateSql = "UPDATE SupportTicket " +
+        String updateSql = "UPDATE asbarnica.SupportTicket " +
                            "SET outcome = ?, resolutionDays = ? " +
                            "WHERE ticketID = ?";
         PreparedStatement pstmt = conn.prepareStatement(updateSql);
