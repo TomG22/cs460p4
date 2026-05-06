@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------------------
  |    Assignment:  Program #4 - Database Design and Implementation
  |       Authors:  Gabriel I. Hernandez (gabehernandez07@arizona.edu)
- |                 Andrew Barnica (asbarnica@arizona.edu)
+ |                 Andrew Barnica (giallanza1@arizona.edu)
  |                 Tom Giallanza (giallanza1@arizona.edu)
  |                 Helena Musial (helenamusial@arizona.edu)
  |
