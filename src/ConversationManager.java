@@ -13,7 +13,7 @@
  |             java.util.Scanner
  |
  |  Methods:
- |      menu()                   - Displays sub-menu and routes to methods
+ |      menu()                    - Displays sub-menu and routes to methods
  |      startConversationPrompt() - Collects input and calls startConversation()
  |      addMessagePrompt()        - Collects input and calls addMessage()
  |      updateFeedbackPrompt()    - Collects input and calls updateFeedback()
@@ -120,7 +120,7 @@ public class ConversationManager {
     private static void addMessagePrompt(Connection conn,
                                          Scanner scanner) throws SQLException {
         System.out.print("User ID: ");
-        int userID = Integer.parseInt(scanner.nextLine().trim());          // FK -> ApplicationUser, needed for rate limit check
+        int userID = Integer.parseInt(scanner.nextLine().trim());         // FK -> ApplicationUser, needed for rate limit check
 
         // Verify the user has not exceeded their tier's daily message limit
         // NOTE: assumes UserManager.checkRateLimit(conn, userID) returns true if within limit
@@ -138,7 +138,7 @@ public class ConversationManager {
         System.out.print("Message content: ");
         String content = scanner.nextLine().trim();                       // body text of the message
 
-        int newID = addMessage(conn, conversationID, role, content); // generated messageID
+        int newID = addMessage(conn, conversationID, role, content);      // generated messageID
         if (newID != -1) {
             conn.commit();
         }
@@ -148,7 +148,9 @@ public class ConversationManager {
      | Method: updateFeedbackPrompt
      |
      | Purpose: Collects user input for message feedback and delegates to
-     |          updateFeedback(). Commits the transaction on success.
+     |          updateFeedback(). Converts the user's "Thumbs Up" / "Thumbs
+     |          Down" input to a numeric rating (1 / 0) before delegating.
+     |          Commits the transaction on success.
      |
      | Pre-condition:  A valid, open database connection is provided.
      |
@@ -169,15 +171,24 @@ public class ConversationManager {
         int conversationID = Integer.parseInt(scanner.nextLine().trim()); // FK -> Message (composite PK)
 
         System.out.print("Rating (Thumbs Up / Thumbs Down): ");
-        String rating = scanner.nextLine().trim();                        // feedback rating value
+        String ratingInput = scanner.nextLine().trim();                   // raw rating string from user
+        int rating;
+        if (ratingInput.equalsIgnoreCase("Thumbs Up")) {
+            rating = 1;                                                   // stored as 1 in DB
+        } else if (ratingInput.equalsIgnoreCase("Thumbs Down")) {
+            rating = 0;                                                   // stored as 0 in DB
+        } else {
+            System.out.println("Invalid rating. Please enter 'Thumbs Up' or 'Thumbs Down'.");
+            return;
+        }
 
         System.out.print("Feedback text (press Enter to skip): ");
         String feedbackText = scanner.nextLine().trim();                  // optional written feedback
         if (feedbackText.isEmpty()) {
-            feedbackText = null; // treat empty input as no feedback text
+            feedbackText = null;                                          // treat empty input as no feedback text
         }
 
-        boolean success = updateFeedback(conn, messageID, conversationID, rating, feedbackText); // result of feedback save
+        boolean success = updateFeedback(conn, messageID, conversationID, rating, feedbackText);
         if (success) {
             conn.commit();
         }
@@ -209,7 +220,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int startConversation(Connection conn, int userID, int workspaceID,
                                         int personaID, String title) throws SQLException {
-        String sql = "INSERT INTO asbarnica.Conversation (conversationID, userID, workspaceID, " // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.Conversation (conversationID, userID, workspaceID, "
                    + "personaID, title, creationDate, activeStatus) "
                    + "VALUES (SEQ_CONVERSATION.NEXTVAL, ?, ?, ?, ?, SYSDATE, 1)";
 
@@ -226,9 +237,9 @@ public class ConversationManager {
         pstmt.setString(4, title);
         pstmt.executeUpdate();
 
-        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated conversationID
+        ResultSet rs = pstmt.getGeneratedKeys();                   // holds the auto-generated conversationID
         if (rs.next()) {
-            int newID = rs.getInt(1); // the newly created conversation's PK
+            int newID = rs.getInt(1);                              // the newly created conversation's PK
             System.out.println("Conversation started with ID: " + newID);
             pstmt.close();
             return newID;
@@ -261,7 +272,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int addMessage(Connection conn, int conversationID,
                                  String role, String content) throws SQLException {
-        String sql = "INSERT INTO asbarnica.Message (messageID, conversationID, role, content, timeSent) " // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.Message (messageID, conversationID, role, content, timeSent) "
                    + "VALUES (SEQ_MESSAGE.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
         PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"messageID"});
@@ -270,9 +281,9 @@ public class ConversationManager {
         pstmt.setString(3, content);
         pstmt.executeUpdate();
 
-        ResultSet rs = pstmt.getGeneratedKeys(); // holds the auto-generated messageID
+        ResultSet rs = pstmt.getGeneratedKeys();                   // holds the auto-generated messageID
         if (rs.next()) {
-            int newID = rs.getInt(1); // the newly created message's PK
+            int newID = rs.getInt(1);                              // the newly created message's PK
             System.out.println("Message added with ID: " + newID);
             pstmt.close();
             return newID;
@@ -285,15 +296,15 @@ public class ConversationManager {
     /*-------------------------------------------------------------------------
      | Method: updateFeedback
      |
-     | Purpose: Inserts a new feedback record for a given message. Uses
-     |          Oracle's MERGE statement to insert a new Feedback row if one
-     |          does not yet exist for this message, or update the existing
-     |          row if it does, avoiding duplicate feedback entries.
+     | Purpose: Inserts or updates a feedback record for a given message.
+     |          Attempts an UPDATE first; if no existing row is found for the
+     |          given messageID and conversationID, falls through to INSERT.
+     |          feedbackText is optional and may be null.
      |
      | Pre-condition:  A valid, open database connection is provided.
      |                 messageID and conversationID must together reference
      |                 an existing Message row (composite PK). rating must
-     |                 be "Thumbs Up" or "Thumbs Down".
+     |                 be 1 (Thumbs Up) or 0 (Thumbs Down).
      |
      | Post-condition: The Feedback table reflects the latest rating and
      |                 feedback text for the given message.
@@ -302,39 +313,58 @@ public class ConversationManager {
      |      conn           (in) - open Oracle database connection
      |      messageID      (in) - message component of the Message composite PK
      |      conversationID (in) - conversation component of the Message composite PK
-     |      rating         (in) - "Thumbs Up" or "Thumbs Down"
+     |      rating         (in) - 1 for Thumbs Up, 0 for Thumbs Down
      |      feedbackText   (in) - optional written feedback (may be null)
      |
      | Returns:  true if feedback was saved successfully, false otherwise
      *-----------------------------------------------------------------------*/
     public static boolean updateFeedback(Connection conn, int messageID,
-                                         int conversationID, String rating,
+                                         int conversationID, int rating,
                                          String feedbackText) throws SQLException {
-        // NOTE: Feedback has a composite PK (feedbackID, messageID); we match on messageID only
-        //       since one feedback row per message is the intended design.
-        String sql = "MERGE INTO asbarnica.Feedback f "                               // insert or update feedback row
-                   + "USING (SELECT messageID FROM dual) src "
-                   + "ON (f.messageID = src.messageID) "
-                   + "WHEN MATCHED THEN "
-                   + "  UPDATE SET f.rating = ?, f.feedbackText = ?, "
-                   + "             f.timeSubmitted = SYSTIMESTAMP "
-                   + "WHEN NOT MATCHED THEN "
-                   + "  INSERT (feedbackID, messageID,s rating, feedbackText, timeSubmitted) "
-                   + "  VALUES (SEQ_FEEDBACK.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, rating);       // UPDATE: new rating
-        pstmt.setString(2, feedbackText); // UPDATE: new feedback text
-        pstmt.setInt(3, messageID);       // INSERT: message FK
-        
-        pstmt.setString(4, rating);       // INSERT: initial rating
-        pstmt.setString(5, feedbackText); // INSERT: initial feedback text
+        // Try to update an existing feedback row first
+        String updateSql = "UPDATE asbarnica.Feedback SET rating = ?, feedbackText = ?, "
+                         + "timeSubmitted = SYSTIMESTAMP "
+                         + "WHERE messageID = ? AND conversationID = ?";
 
-        int rows = pstmt.executeUpdate(); // number of rows affected by MERGE
+        PreparedStatement pstmt = conn.prepareStatement(updateSql);
+        pstmt.setInt(1, rating);
+        if (feedbackText == null) {
+            pstmt.setNull(2, Types.VARCHAR);  // optional field — no feedback text provided
+        } else {
+            pstmt.setString(2, feedbackText);
+        }
+        pstmt.setInt(3, messageID);
+        pstmt.setInt(4, conversationID);
+
+        int rows = pstmt.executeUpdate();
         pstmt.close();
 
-        if (rows > 0) {
+        if (rows == 1) {
             System.out.println("Feedback updated for message ID: " + messageID);
+            return true;
+        }
+
+        // No existing row — insert a new feedback record
+        String insertSql = "INSERT INTO asbarnica.Feedback "
+                         + "(feedbackID, messageID, conversationID, rating, feedbackText, timeSubmitted) "
+                         + "VALUES (SEQ_FEEDBACK.NEXTVAL, ?, ?, ?, ?, SYSTIMESTAMP)";
+
+        pstmt = conn.prepareStatement(insertSql);
+        pstmt.setInt(1, messageID);
+        pstmt.setInt(2, conversationID);
+        pstmt.setInt(3, rating);
+        if (feedbackText == null) {
+            pstmt.setNull(4, Types.VARCHAR);  // optional field — no feedback text provided
+        } else {
+            pstmt.setString(4, feedbackText);
+        }
+
+        rows = pstmt.executeUpdate();
+        pstmt.close();
+
+        if (rows == 1) {
+            System.out.println("Feedback added for message ID: " + messageID);
             return true;
         }
 
