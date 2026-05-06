@@ -170,6 +170,20 @@ public class ConversationManager {
         System.out.print("Conversation ID: ");
         int conversationID = Integer.parseInt(scanner.nextLine().trim()); // FK -> Message (composite PK)
 
+        // Verify the message exists before attempting feedback
+        String checkSql = "SELECT COUNT(*) FROM asbarnica.Message WHERE messageID = ? AND conversationID = ?";
+        PreparedStatement check = conn.prepareStatement(checkSql);
+        check.setInt(1, messageID);
+        check.setInt(2, conversationID);
+        ResultSet rs = check.executeQuery();
+        rs.next();
+        if (rs.getInt(1) == 0) {
+            System.out.println("No message found with messageID=" + messageID + " and conversationID=" + conversationID);
+            check.close();
+            return;
+        }
+        check.close();
+
         System.out.print("Rating (Thumbs Up / Thumbs Down): ");
         String ratingInput = scanner.nextLine().trim();                   // raw rating string from user
         int rating;
