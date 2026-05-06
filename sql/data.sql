@@ -38,7 +38,7 @@ INSERT INTO BillingProfile VALUES (SEQ_BILLING.NEXTVAL, 5, 'Pay Pal',     '904 O
 /*------------------------------*
  | Inserting into Invoice Table |
  *------------------------------*/
-INSERT INTO Invoice VALUES (SEQ_INVOICE.NEXTVAL, 3, 20.00,   DATE '2019-08-26', 0); -- Homelander sucks at paying
+INSERT INTO Invoice VALUES (SEQ_INVOICE.NEXTVAL, 3, 20.00,   DATE '2019-08-26', 0);
 INSERT INTO Invoice VALUES (SEQ_INVOICE.NEXTVAL, 3, 20.00,   DATE '2023-08-26', 0);
 INSERT INTO Invoice VALUES (SEQ_INVOICE.NEXTVAL, 4, 20.00,   DATE '2024-10-31', 1);
 INSERT INTO Invoice VALUES (SEQ_INVOICE.NEXTVAL, 5, 100.00,  DATE '2020-04-26', 1);
@@ -70,7 +70,7 @@ INSERT INTO Workspace VALUES (SEQ_WORKSPACE.NEXTVAL, 4, 'Personal Questions', 0,
  | Inserting into WorkspaceMembership Table |
  *------------------------------------------*/
 INSERT INTO WorkspaceMembership VALUES (3, 1, DATE '2024-04-13');
-INSERT INTO WorkspaceMembership VALUES (1, 1, DATE '2024-05-20'); -- Yes invincible is now part of the seven
+INSERT INTO WorkspaceMembership VALUES (1, 1, DATE '2024-05-20');
 INSERT INTO WorkspaceMembership VALUES (1, 2, DATE '2024-01-20');
 INSERT INTO WorkspaceMembership VALUES (4, 3, DATE '2020-10-10');
 
