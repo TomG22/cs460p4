@@ -406,7 +406,7 @@ public class UserManager {
         // Counting the amount of messages the user has sent today
         String countQuery = "SELECT COUNT(*) " +
                 "FROM asbarnica.Message m " +
-                "JOIN asbarnica.Conversation c" +
+                "JOIN asbarnica.Conversation c " +
                 "ON m.conversationID = c.conversationID " +
                 "WHERE c.userID = ? " +
                 "AND TRUNC(m.timeSent) = TRUNC(SYSDATE) " +
