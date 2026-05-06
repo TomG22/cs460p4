@@ -189,7 +189,7 @@ public class PromptManager {
             return -1;
         }
 
-        String sql = "INSERT INTO PromptTemplate "                          // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.PromptTemplate "                          // parameterized INSERT
                    + "(templateID, creatorID, workspaceID, title, content, "
                    + "category, privateStatus, creationDate) "
                    + "VALUES (SEQ_PROMPTTEMPLATE.NEXTVAL, ?, ?, ?, ?, ?, ?, SYSDATE)";
@@ -272,7 +272,7 @@ public class PromptManager {
         }
 
         String setClause = setClauses.substring(0, setClauses.length() - 2); // strip trailing ", "
-        String sql = "UPDATE PromptTemplate SET " + setClause                 // final UPDATE statement
+        String sql = "UPDATE asbarnica.PromptTemplate SET " + setClause                 // final UPDATE statement
                    + " WHERE templateID = ?";
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
