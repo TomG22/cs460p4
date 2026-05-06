@@ -146,7 +146,7 @@ public class PersonaManager {
             return -1;
         }
 
-        String sql = "INSERT INTO Persona (personalID, creatorID, \"name\", " // parameterized INSERT
+        String sql = "INSERT INTO assbarnica.Persona (personalID, creatorID, \"name\", " // parameterized INSERT
                    + "instructions, creationDate) "
                    + "VALUES (SEQ_PERSONA.NEXTVAL, ?, ?, ?, SYSDATE)";
 
@@ -196,7 +196,7 @@ public class PersonaManager {
     public static boolean deletePersona(Connection conn, int personalID) throws SQLException {
 
         // Per spec: abort deletion if persona is active in more than 5 ongoing conversations
-        String countSql = "SELECT COUNT(*) FROM Conversation "  // count active conversations using this persona
+        String countSql = "SELECT COUNT(*) FROM assbarnica.Conversation "  // count active conversations using this persona
                         + "WHERE personaID = ? AND activeStatus = 1";
 
         PreparedStatement countStmt = conn.prepareStatement(countSql);
@@ -213,7 +213,7 @@ public class PersonaManager {
             return false;
         }
 
-        String sql = "DELETE FROM Persona WHERE personalID = ?"; // targeted delete by PK
+        String sql = "DELETE FROM asbarnica.Persona WHERE personalID = ?"; // targeted delete by PK
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.setInt(1, personalID);

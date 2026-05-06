@@ -209,7 +209,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int startConversation(Connection conn, int userID, int workspaceID,
                                         int personaID, String title) throws SQLException {
-        String sql = "INSERT INTO Conversation (conversationID, userID, workspaceID, " // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.Conversation (conversationID, userID, workspaceID, " // parameterized INSERT
                    + "personaID, title, creationDate, activeStatus) "
                    + "VALUES (SEQ_CONVERSATION.NEXTVAL, ?, ?, ?, ?, SYSDATE, 1)";
 
@@ -261,7 +261,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int addMessage(Connection conn, int conversationID,
                                  String role, String content) throws SQLException {
-        String sql = "INSERT INTO Message (messageID, conversationID, role, content, timeSent) " // parameterized INSERT
+        String sql = "INSERT INTO assbarnica.Message (messageID, conversationID, role, content, timeSent) " // parameterized INSERT
                    + "VALUES (SEQ_MESSAGE.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
         PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"messageID"});
@@ -312,7 +312,7 @@ public class ConversationManager {
                                          String feedbackText) throws SQLException {
         // NOTE: Feedback has a composite PK (feedbackID, messageID); we match on messageID only
         //       since one feedback row per message is the intended design.
-        String sql = "MERGE INTO Feedback f "                               // insert or update feedback row
+        String sql = "MERGE INTO asbarnica.Feedback f "                               // insert or update feedback row
                    + "USING (SELECT ? AS messageID FROM dual) src "
                    + "ON (f.messageID = src.messageID) "
                    + "WHEN MATCHED THEN "
