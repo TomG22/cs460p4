@@ -180,13 +180,13 @@ public class UserManager {
 
         int userID = WorkspaceManager.nextVal(conn, "SEQ_USER");
 
-        String query = "INSERT INTO asbarnica.ApplicationUser VALUES (?, ?, ?, SYSDATE, ?, ?)";
+        String query = "INSERT INTO asbarnica.ApplicationUser VALUES (?, ?, ?, ?, SYSDATE, ?)";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);
-        stmt.setString(2, name);
-        stmt.setString(3, email);
-        stmt.setString(4, lang);
-        stmt.setString(5, String.valueOf(tierID));
+        stmt.setInt(2, tierID);
+        stmt.setString(3, name);
+        stmt.setString(4, email);
+        stmt.setString(5, lang);
         stmt.executeUpdate();
         stmt.close();
 
