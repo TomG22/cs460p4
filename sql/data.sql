@@ -14,8 +14,8 @@
 /*--------------------------------------*
  | Inserting into Membership Tier Table |
  *--------------------------------------*/
-INSERT INTO MembershipTier VALUES (SEQ_TIER.NEXTVAL, 'free',       100,  0, 0.00);
-INSERT INTO MembershipTier VALUES (SEQ_TIER.NEXTVAL, 'plus',       500,  1, 20.00);
+INSERT INTO MembershipTier VALUES (SEQ_TIER.NEXTVAL, 'free',       5,  0, 0.00);
+INSERT INTO MembershipTier VALUES (SEQ_TIER.NEXTVAL, 'plus',       100,  1, 20.00);
 INSERT INTO MembershipTier VALUES (SEQ_TIER.NEXTVAL, 'enterprise', 1000, 1, 100.00);
 
 /*---------------------------------------*
