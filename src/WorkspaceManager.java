@@ -101,7 +101,7 @@ public class WorkspaceManager {
         int workspaceID = nextVal(conn, "SEQ_WORKSPACE"); // generated PK for new workspace
 
         String insertWorkspace = "INSERT INTO Workspace " +
-                                 "(workspaceID, creatorID, \"name\", privateStatus, creationDate) " +
+                                 "(workspaceID, creatorID, name, privateStatus, creationDate) " +
                                  "VALUES (?, ?, ?, ?, SYSDATE)";
         PreparedStatement pstmt = conn.prepareStatement(insertWorkspace);
         pstmt.setInt(1, workspaceID);
@@ -145,7 +145,7 @@ public class WorkspaceManager {
         System.out.print("New name: ");
         String newName = scanner.nextLine().trim(); // replacement workspace name
 
-        String updateSql = "UPDATE Workspace SET \"name\" = ? WHERE workspaceID = ?";
+        String updateSql = "UPDATE Workspace SET name = ? WHERE workspaceID = ?";
         PreparedStatement pstmt = conn.prepareStatement(updateSql);
         pstmt.setString(1, newName);
         pstmt.setInt(2, workspaceID);
