@@ -170,15 +170,15 @@ public class ConversationManager {
         System.out.print("Conversation ID: ");
         int conversationID = Integer.parseInt(scanner.nextLine().trim()); // FK -> Message (composite PK)
 
-        System.out.print("Rating (Thumbs Up / Thumbs Down): ");
+        System.out.print("Rating (1 for Thumbs Up / 0 for Thumbs Down): ");
         String ratingInput = scanner.nextLine().trim();                   // raw rating string from user
         int rating;
-        if (ratingInput.equalsIgnoreCase("Thumbs Up")) {
+        if (ratingInput.equalsIgnoreCase("1")) {
             rating = 1;                                                   // stored as 1 in DB
-        } else if (ratingInput.equalsIgnoreCase("Thumbs Down")) {
+        } else if (ratingInput.equalsIgnoreCase("0")) {
             rating = 0;                                                   // stored as 0 in DB
         } else {
-            System.out.println("Invalid rating. Please enter 'Thumbs Up' or 'Thumbs Down'.");
+            System.out.println("Invalid rating. Please enter 'Thumbs Up (1)' or 'Thumbs Down (0)'.");
             return;
         }
 

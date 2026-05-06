@@ -146,11 +146,11 @@ public class PersonaManager {
             return -1;
         }
 
-        String sql = "INSERT INTO asbarnica.Persona (personalID, creatorID, \"name\", " // parameterized INSERT
+        String sql = "INSERT INTO asbarnica.Persona (personaID, creatorID, name, " // parameterized INSERT
                    + "instructions, creationDate) "
                    + "VALUES (SEQ_PERSONA.NEXTVAL, ?, ?, ?, SYSDATE)";
 
-        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"personalID"});
+        PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"personaID"});
         pstmt.setInt(1, creatorID);
         pstmt.setString(2, name.trim());
         pstmt.setString(3, instructions);
@@ -213,7 +213,7 @@ public class PersonaManager {
             return false;
         }
 
-        String sql = "DELETE FROM asbarnica.Persona WHERE personalID = ?"; // targeted delete by PK
+        String sql = "DELETE FROM asbarnica.Persona WHERE personaID = ?"; // targeted delete by PK
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.setInt(1, personalID);

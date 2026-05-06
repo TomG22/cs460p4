@@ -290,7 +290,7 @@ public class UserManager {
         //To delete a user, first check for deletion constraints
 
         //1. Cannot delete user if they have an unpaid invoice
-        String queryInv = "SELECT asbarnica.paymentStatus FROM Invoice WHERE userID = ?";
+        String queryInv = "SELECT paymentStatus FROM asbarnica.Invoice WHERE userID = ?";
         PreparedStatement stmtInv = conn.prepareStatement(queryInv);
         stmtInv.setInt(1, userID);
         ResultSet invResult = stmtInv.executeQuery();
