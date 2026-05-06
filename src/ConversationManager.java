@@ -171,7 +171,7 @@ public class ConversationManager {
         int conversationID = Integer.parseInt(scanner.nextLine().trim()); // FK -> Message (composite PK)
 
         // Verify the message exists before attempting feedback
-        String checkSql = "SELECT COUNT(*) FROM asbarnica.Message WHERE messageID = ? AND conversationID = ?";
+        String checkSql = "SELECT COUNT(*) FROM giallanza1.Message WHERE messageID = ? AND conversationID = ?";
         PreparedStatement check = conn.prepareStatement(checkSql);
         check.setInt(1, messageID);
         check.setInt(2, conversationID);
@@ -234,7 +234,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int startConversation(Connection conn, int userID, int workspaceID,
                                         int personaID, String title) throws SQLException {
-        String sql = "INSERT INTO asbarnica.Conversation (conversationID, userID, workspaceID, "
+        String sql = "INSERT INTO giallanza1.Conversation (conversationID, userID, workspaceID, "
                    + "personaID, title, creationDate, activeStatus) "
                    + "VALUES (SEQ_CONVERSATION.NEXTVAL, ?, ?, ?, ?, SYSDATE, 1)";
 
@@ -286,7 +286,7 @@ public class ConversationManager {
      *-----------------------------------------------------------------------*/
     public static int addMessage(Connection conn, int conversationID,
                                  String role, String content) throws SQLException {
-        String sql = "INSERT INTO asbarnica.Message (messageID, conversationID, role, content, timeSent) "
+        String sql = "INSERT INTO giallanza1.Message (messageID, conversationID, role, content, timeSent) "
                    + "VALUES (SEQ_MESSAGE.NEXTVAL, ?, ?, ?, SYSTIMESTAMP)";
 
         PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"messageID"});
@@ -337,7 +337,7 @@ public class ConversationManager {
                                          String feedbackText) throws SQLException {
 
         // Try to update an existing feedback row first
-        String updateSql = "UPDATE asbarnica.Feedback SET rating = ?, feedbackText = ?, "
+        String updateSql = "UPDATE giallanza1.Feedback SET rating = ?, feedbackText = ?, "
                          + "timeSubmitted = SYSTIMESTAMP "
                          + "WHERE messageID = ? AND conversationID = ?";
 
@@ -360,7 +360,7 @@ public class ConversationManager {
         }
 
         // No existing row — insert a new feedback record
-        String insertSql = "INSERT INTO asbarnica.Feedback "
+        String insertSql = "INSERT INTO giallanza1.Feedback "
                          + "(feedbackID, messageID, conversationID, rating, feedbackText, timeSubmitted) "
                          + "VALUES (SEQ_FEEDBACK.NEXTVAL, ?, ?, ?, ?, SYSTIMESTAMP)";
 

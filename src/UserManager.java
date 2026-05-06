@@ -7,7 +7,7 @@ import java.util.Scanner;
 /*-----------------------------------------------------------------------------
  |    Assignment:  Program #4 - Database Design and Implementation
  |       Authors:  Gabriel I. Hernandez (gabehernandez07@arizona.edu)
- |                 Andrew Barnica (asbarnica@arizona.edu)
+ |                 Andrew Barnica (giallanza1@arizona.edu)
  |                 Tom Giallanza (giallanza1@arizona.edu)
  |                 Helena Musial (helenamusial@arizona.edu)
  |
@@ -168,7 +168,7 @@ public class UserManager {
         System.out.println("User's membership tier (Free, Plus, Enterprise): ");
         String tier = scanner.nextLine().trim().toLowerCase();
 
-        String queryTier = "SELECT tierID FROM asbarnica.membershipTier WHERE name = ?";
+        String queryTier = "SELECT tierID FROM giallanza1.membershipTier WHERE name = ?";
         PreparedStatement stmtTier = conn.prepareStatement(queryTier);
         stmtTier.setString(1, tier);
         ResultSet tierResult = stmtTier.executeQuery();
@@ -180,7 +180,7 @@ public class UserManager {
 
         int userID = WorkspaceManager.nextVal(conn, "SEQ_USER");
 
-        String query = "INSERT INTO asbarnica.ApplicationUser VALUES (?, ?, ?, ?, SYSDATE, ?)";
+        String query = "INSERT INTO giallanza1.ApplicationUser VALUES (?, ?, ?, ?, SYSDATE, ?)";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);
         stmt.setInt(2, tierID);
@@ -199,7 +199,7 @@ public class UserManager {
 
         int billingID = WorkspaceManager.nextVal(conn, "SEQ_BILLING");
 
-        String query2 = "INSERT INTO asbarnica.BillingProfile VALUES (?, ?, ?, ?)";
+        String query2 = "INSERT INTO giallanza1.BillingProfile VALUES (?, ?, ?, ?)";
         PreparedStatement stmt2 = conn.prepareStatement(query2);
         stmt2.setInt(1, billingID);
         stmt2.setInt(2, userID);
@@ -239,7 +239,7 @@ public class UserManager {
         String tier = scanner.nextLine().trim().toLowerCase();
 
         //Fetch tierID from MembershipTier table with matching tier name
-        String query = "SELECT tierID FROM asbarnica.MembershipTier WHERE name = ?";
+        String query = "SELECT tierID FROM giallanza1.MembershipTier WHERE name = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setString(1, tier);
         ResultSet tierResult = stmt.executeQuery();
@@ -248,7 +248,7 @@ public class UserManager {
         tierResult.close();
         stmt.close();
 
-        String query2 = "UPDATE asbarnica.ApplicationUser SET tierID = ? WHERE userID = ?";
+        String query2 = "UPDATE giallanza1.ApplicationUser SET tierID = ? WHERE userID = ?";
         PreparedStatement stmt2 = conn.prepareStatement(query2);
         stmt2.setInt(1, tierID);
         stmt2.setInt(2, userID);
@@ -290,7 +290,7 @@ public class UserManager {
         //To delete a user, first check for deletion constraints
 
         //1. Cannot delete user if they have an unpaid invoice
-        String queryInv = "SELECT paymentStatus FROM asbarnica.Invoice WHERE userID = ?";
+        String queryInv = "SELECT paymentStatus FROM giallanza1.Invoice WHERE userID = ?";
         PreparedStatement stmtInv = conn.prepareStatement(queryInv);
         stmtInv.setInt(1, userID);
         ResultSet invResult = stmtInv.executeQuery();
@@ -312,7 +312,7 @@ public class UserManager {
         }
 
         //2. Cannot delete user if they have open support tickets
-        String querySup = "SELECT outcome FROM asbarnica.SupportTicket WHERE userID = ?";
+        String querySup = "SELECT outcome FROM giallanza1.SupportTicket WHERE userID = ?";
         PreparedStatement stmtSup = conn.prepareStatement(querySup);
         stmtSup.setInt(1, userID);
         ResultSet supResult = stmtSup.executeQuery();
@@ -334,7 +334,7 @@ public class UserManager {
         }
 
         //Checks passed, delete the user.
-        String queryDel = "DELETE FROM asbarnica.ApplicationUser WHERE userID = ?";
+        String queryDel = "DELETE FROM giallanza1.ApplicationUser WHERE userID = ?";
         PreparedStatement stmtDel = conn.prepareStatement(queryDel);
         stmtDel.setInt(1, userID);
         int numDeleted = stmtDel.executeUpdate();
@@ -405,8 +405,8 @@ public class UserManager {
 
         // Counting the amount of messages the user has sent today
         String countQuery = "SELECT COUNT(*) " +
-                "FROM asbarnica.Message m " +
-                "JOIN asbarnica.Conversation c " +
+                "FROM giallanza1.Message m " +
+                "JOIN giallanza1.Conversation c " +
                 "ON m.conversationID = c.conversationID " +
                 "WHERE c.userID = ? " +
                 "AND TRUNC(m.timeSent) = TRUNC(SYSDATE) " +
@@ -446,8 +446,8 @@ public class UserManager {
     private static int getRateLimit(Connection conn, int userID) throws SQLException {
         // Slight change, joined on tierID instead of userID
         String query = "SELECT mt.maxMessagesPerDay AS rate " +
-                "FROM asbarnica.MembershipTier mt " +
-                "JOIN asbarnica.ApplicationUser au " +
+                "FROM giallanza1.MembershipTier mt " +
+                "JOIN giallanza1.ApplicationUser au " +
                 "ON mt.tierID = au.tierID " +
                 "WHERE au.userID = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
@@ -490,7 +490,7 @@ public class UserManager {
         System.out.println("Invoice Amount: ");
         int amount = scanner.nextInt();
 
-        String query = "INSERT INTO asbarnica.Invoice VALUES (?, ?, ?, SYSDATE, 0)";
+        String query = "INSERT INTO giallanza1.Invoice VALUES (?, ?, ?, SYSDATE, 0)";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, invoiceID);
         stmt.setInt(2, userID);
@@ -535,7 +535,7 @@ public class UserManager {
         System.out.println("Invoice ID: ");
         int invoiceID = scanner.nextInt();
 
-        String query = "UPDATE asbarnica.Invoice SET paymentStatus = 1 " +
+        String query = "UPDATE giallanza1.Invoice SET paymentStatus = 1 " +
                 "WHERE userID = ? AND invoiceID = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);

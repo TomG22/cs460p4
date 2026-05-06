@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------------------
  |    Assignment:  Program #4 - Database Design and Implementation
  |       Authors:  Gabriel I. Hernandez (gabehernandez07@arizona.edu)
- |                 Andrew Barnica (asbarnica@arizona.edu)
+ |                 Andrew Barnica (giallanza1@arizona.edu)
  |                 Tom Giallanza (giallanza1@arizona.edu)
  |                 Helena Musial (helenamusial@arizona.edu)
  |
@@ -100,7 +100,7 @@ public class WorkspaceManager {
 
         int workspaceID = nextVal(conn, "SEQ_WORKSPACE"); // generated PK for new workspace
 
-        String insertWorkspace = "INSERT INTO asbarnica.Workspace " +
+        String insertWorkspace = "INSERT INTO giallanza1.Workspace " +
                                  "(workspaceID, creatorID, name, privateStatus, creationDate) " +
                                  "VALUES (?, ?, ?, ?, SYSDATE)";
         PreparedStatement pstmt = conn.prepareStatement(insertWorkspace);
@@ -112,7 +112,7 @@ public class WorkspaceManager {
         pstmt.close();
 
         // Creator is automatically added as a member of the workspace they created
-        String insertMembership = "INSERT INTO asbarnica.WorkspaceMembership VALUES (?, ?, SYSDATE)";
+        String insertMembership = "INSERT INTO giallanza1.WorkspaceMembership VALUES (?, ?, SYSDATE)";
         PreparedStatement pstmt2 = conn.prepareStatement(insertMembership);
         pstmt2.setInt(1, creatorID);
         pstmt2.setInt(2, workspaceID);
@@ -145,7 +145,7 @@ public class WorkspaceManager {
         System.out.print("New name: ");
         String newName = scanner.nextLine().trim(); // replacement workspace name
 
-        String updateSql = "UPDATE asbarnica.Workspace SET name = ? WHERE workspaceID = ?";
+        String updateSql = "UPDATE giallanza1.Workspace SET name = ? WHERE workspaceID = ?";
         PreparedStatement pstmt = conn.prepareStatement(updateSql);
         pstmt.setString(1, newName);
         pstmt.setInt(2, workspaceID);
@@ -190,7 +190,7 @@ public class WorkspaceManager {
         int workspaceID = Integer.parseInt(scanner.nextLine().trim()); // destination workspace
 
         // Verify the user belongs to the target workspace before allowing the move
-        String membershipCheck = "SELECT COUNT(*) FROM asbarnica.WorkspaceMembership " +
+        String membershipCheck = "SELECT COUNT(*) FROM giallanza1.WorkspaceMembership " +
                                  "WHERE userID = ? AND workspaceID = ?";
         PreparedStatement checkStmt = conn.prepareStatement(membershipCheck);
         checkStmt.setInt(1, userID);
@@ -208,7 +208,7 @@ public class WorkspaceManager {
         }
 
         // Membership confirmed: update the conversation's workspace
-        String updateSql = "UPDATE asbarnica.Conversation SET workspaceID = ? WHERE conversationID = ?";
+        String updateSql = "UPDATE giallanza1.Conversation SET workspaceID = ? WHERE conversationID = ?";
         PreparedStatement pstmt = conn.prepareStatement(updateSql);
         pstmt.setInt(1, workspaceID);
         pstmt.setInt(2, conversationID);
@@ -241,7 +241,7 @@ public class WorkspaceManager {
      | Returns: int - the next available integer value from the sequence
      *-----------------------------------------------------------------------*/
     static int nextVal(Connection conn, String sequenceName) throws SQLException {
-        String sql = "SELECT asbarnica." + sequenceName + ".NEXTVAL FROM DUAL";
+        String sql = "SELECT giallanza1." + sequenceName + ".NEXTVAL FROM DUAL";
         Statement stmt = conn.createStatement();
         ResultSet result = stmt.executeQuery(sql);
         result.next();
