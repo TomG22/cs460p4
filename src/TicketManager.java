@@ -91,7 +91,7 @@ public class TicketManager {
         System.out.print("Topic (e.g. Billing, Model Error): ");
         String topic = scanner.nextLine().trim(); // short description of the issue
 
-        int ticketID = WorkspaceManager.nextVal(conn, "SEQ_TICKET"); // generated PK
+        int ticketID = WorkspaceManager.nextVal(conn, "asbarnica.SEQ_TICKET"); // generated PK
 
         // agentID starts NULL, resolutionDays NULL, outcome 'Open'
         String insertSql = "INSERT INTO asbarnica.SupportTicket VALUES (?, ?, NULL, ?, SYSDATE, NULL, 'Open')";

@@ -485,7 +485,7 @@ public class UserManager {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
 
-        int invoiceID = WorkspaceManager.nextVal(conn, "SEQ_INVOICE");
+        int invoiceID = WorkspaceManager.nextVal(conn, "asbarnica.SEQ_INVOICE");
 
         System.out.println("Invoice Amount: ");
         int amount = scanner.nextInt();
