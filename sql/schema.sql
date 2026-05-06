@@ -20,7 +20,7 @@
  *-------------------------------*/
 CREATE TABLE MembershipTier (
     tierID            INTEGER      PRIMARY KEY,
-    "name"            VARCHAR2(50) NOT NULL, -- Added quotes to avoid using a keyword, might be doing too much though
+    name              VARCHAR2(50) NOT NULL, -- Added quotes to avoid using a keyword, might be doing too much though
     maxMessagesPerDay Number(6)    NOT NULL, -- Guessing 999,999 max messages is enough
     proModelStatus    Number(1)    NOT NULL, -- True or false (1 or 0)
     monthlyFee        Number(10,2) NOT NULL  -- Accounting for cents
@@ -32,7 +32,7 @@ CREATE TABLE MembershipTier (
 CREATE TABLE ApplicationUser (
     userID            INTEGER      PRIMARY KEY,
     tierID            INTEGER, -- FK to MembershipTier
-    "name"            VARCHAR2(50) NOT NULL,
+    name              VARCHAR2(50) NOT NULL,
     email             VARCHAR2(50) NOT NULL UNIQUE,
     creationDate      DATE         NOT NULL,
     preferredLanguage VARCHAR2(20) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE Invoice (
     userID        INTEGER, -- FK to AppUser
     amount        NUMBER(10,2) NOT NULL, -- Accounting for cents
     invoiceDate   DATE         NOT NULL,
-    paymentStatus VARCHAR(10)  NOT NULL, -- Changed to be like "unpaid"/"paid"/ and maybe "pending"
+    paymentStatus NUMBER(1)    NOT NULL, -- Changed to be 0 or 1
     CONSTRAINT FK_InvoiceUser FOREIGN KEY (userID)
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE
 );
@@ -97,7 +97,7 @@ CREATE TABLE SupportTicket (
 CREATE TABLE Workspace (
     workspaceID   INTEGER      PRIMARY KEY,
     creatorID     INTEGER, -- FK to AppUser
-    "name"        VARCHAR2(50) NOT NULL,
+    name          VARCHAR2(50) NOT NULL,
     privateStatus Number(1)    NOT NULL,
     creationDate  DATE         NOT NULL,
     CONSTRAINT FK_CreatorWorkspace FOREIGN KEY (creatorID)
@@ -124,7 +124,7 @@ CREATE TABLE WorkspaceMembership (
 CREATE TABLE Persona (
     personalID   INTEGER PRIMARY KEY,
     creatorID    INTEGER, -- FK to UserApp
-    "name"       VARCHAR2(50)  NOT NULL,
+    name       VARCHAR2(50)  NOT NULL,
     instructions VARCHAR2(500) NOT NULL,
     creationDate DATE          NOT NULL,
     CONSTRAINT FK_PersonaUser FOREIGN KEY (creatorID)
@@ -170,8 +170,8 @@ CREATE TABLE Message (
 CREATE TABLE Feedback (
     feedbackID     INTEGER        NOT NULL,
     messageID      INTEGER        NOT NULL, -- FK to Message
-    conversationID INTEGER,                 -- Added new FK for composite Message PK
-    rating         VARCHAR(15)    NOT NULL, -- e.g. Thumbs Up/Thumbs Down
+    conversationID INTEGER        NOT NULL, -- Added new FK for composite Message PK
+    rating         Number(1)      NOT NULL, -- e.g. 0/1
     feedbackText   VARCHAR2(1000) NOT NULL,
     timeSubmitted  TIMESTAMP      NOT NULL,
     CONSTRAINT PK_Feedback PRIMARY KEY (feedbackID, messageID),
@@ -185,7 +185,7 @@ CREATE TABLE Feedback (
 CREATE TABLE Bookmark (
     userID         INTEGER NOT NULL, -- FK to AppUser
     messageID      INTEGER NOT NULL, -- FK to Message
-    conversationID INTEGER,          -- Like for feedback, added FK for composite Message PK
+    conversationID INTEGER NOT NULL, -- Like for feedback, added FK for composite Message PK
     timeBookmarked TIMESTAMP,
     CONSTRAINT PK_Bookmark PRIMARY KEY (userID, messageID), -- Added combined primary key
     CONSTRAINT FK_BookmarkUser FOREIGN KEY (userID)
@@ -205,7 +205,7 @@ CREATE TABLE PromptTemplate (
     content       VARCHAR2(1000) NOT NULL,
     category      VARCHAR2(50)   NOT NULL,
     privateStatus NUMBER(1)      NOT NULL,
-    creationDate  DATE,
+    creationDate  DATE           NOT NULL,
     CONSTRAINT FK_PromptTemplateUser FOREIGN KEY (creatorID)
         REFERENCES ApplicationUser(userID) ON DELETE CASCADE,
     CONSTRAINT FK_PromptTemplateWorkspace FOREIGN KEY (workspaceID)
