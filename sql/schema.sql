@@ -122,7 +122,7 @@ CREATE TABLE WorkspaceMembership (
  | Persona Table Creation |
  *------------------------*/
 CREATE TABLE Persona (
-    personalID   INTEGER PRIMARY KEY,
+    personaID   INTEGER PRIMARY KEY,
     creatorID    INTEGER, -- FK to UserApp
     name       VARCHAR2(50)  NOT NULL,
     instructions VARCHAR2(500) NOT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE Conversation (
     CONSTRAINT FK_ConversationWorkSpace FOREIGN KEY (workspaceID)
         REFERENCES Workspace(workspaceID) ON DELETE SET NULL,
     CONSTRAINT FK_ConversationPersona FOREIGN KEY (personaID)
-        REFERENCES Persona(personalID) ON DELETE SET NULL
+        REFERENCES Persona(personaID) ON DELETE SET NULL
 );
 
 /*------------------------*

@@ -213,15 +213,15 @@ public class QueryManager {
         // Get every persona that has received feedback, with its total count.
         String totalSql = "SELECT p.name AS personaName, COUNT(f.feedbackID) AS totalFeedback " +
                           "FROM asbarnica.Persona p " +
-                          "JOIN asbarnica.Conversation c ON p.personalID     = c.personalID " +
+                          "JOIN asbarnica.Conversation c ON p.personaID     = c.personaID " +
                           "JOIN asbarnica.Message m      ON c.conversationID = m.conversationID " +
                           "JOIN asbarnica.Feedback f     ON m.messageID      = f.messageID " +
-                          "GROUP BY p.personalID, p.name";
+                          "GROUP BY p.personaID, p.name";
 
         // For a specific persona, count only the Thumbs Up ratings.
         String thumbsUpSql = "SELECT COUNT(f.feedbackID) AS thumbsUpCount " +
                              "FROM asbarnica.Persona p " +
-                             "JOIN asbarnica.Conversation c ON p.personalID     = c.personalID " +
+                             "JOIN asbarnica.Conversation c ON p.personaID     = c.personaID " +
                              "JOIN asbarnica.Message m      ON c.conversationID = m.conversationID " +
                              "JOIN asbarnica.Feedback f     ON m.messageID      = f.messageID " +
                              "WHERE p.name = ? AND f.rating = 1"; // 1 = Thumbs Up
@@ -301,7 +301,7 @@ public class QueryManager {
         // Count all messages for this persona
         String totalSql = "SELECT COUNT(m.messageID) AS totalMessages " +
                           "FROM asbarnica.Persona p " +
-                          "JOIN asbarnica.Conversation c ON p.personalID     = c.personalID " +
+                          "JOIN asbarnica.Conversation c ON p.personaID     = c.personaID " +
                           "JOIN asbarnica.Message m      ON c.conversationID = m.conversationID " +
                           "WHERE UPPER(p.name) = UPPER(?)";
 
@@ -323,7 +323,7 @@ public class QueryManager {
         // Count only User-role messages for this persona
         String userSql = "SELECT COUNT(m.messageID) AS userMessages " +
                          "FROM asbarnica.Persona p " +
-                         "JOIN asbarnica.Conversation c ON p.personalID     = c.personalID " +
+                         "JOIN asbarnica.Conversation c ON p.personaID     = c.personaID " +
                          "JOIN asbarnica.Message m      ON c.conversationID = m.conversationID " +
                          "WHERE UPPER(p.name) = UPPER(?) AND m.role = 'user'"; 
 
@@ -344,7 +344,7 @@ public class QueryManager {
         String topConvoSql = "SELECT c.title AS conversationTitle, " +
                              "       COUNT(m.messageID) AS messageCount " +
                              "FROM asbarnica.Persona p " +
-                             "JOIN asbarnica.Conversation c ON p.personalID      = c.personalID " +
+                             "JOIN asbarnica.Conversation c ON p.personaID      = c.personaID " +
                              "JOIN asbarnica.Message m      ON c.conversationID  = m.conversationID " +
                              "WHERE UPPER(p.name) = UPPER(?) " +
                              "GROUP BY c.conversationID, c.title " +
