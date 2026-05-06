@@ -167,11 +167,12 @@ public class UserManager {
 
         System.out.println("User's membership tier (Free, Plus, Enterprise): ");
         String tier = scanner.nextLine().trim().toLowerCase();
-        
-        String queryTier = "SELECT tierID FROM membershipTier WHERE tierName = ?";
+
+        String queryTier = "SELECT tierID FROM membershipTier WHERE name = ?";
         PreparedStatement stmtTier = conn.prepareStatement(queryTier);
         stmtTier.setString(1, tier);
         ResultSet tierResult = stmtTier.executeQuery();
+        tierResult.next();
         int tierID = tierResult.getInt(1);
         tierResult.close();
         stmtTier.close();
@@ -179,7 +180,7 @@ public class UserManager {
 
         int userID = WorkspaceManager.nextVal(conn, "SEQ_USER");
 
-        String query = "INSERT INTO ApplictionUser VALUES (?, ?, ?, SYSDATE, ?, ?)";
+        String query = "INSERT INTO ApplicationUser VALUES (?, ?, ?, SYSDATE, ?, ?)";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);
         stmt.setString(2, name);
@@ -197,7 +198,7 @@ public class UserManager {
         String addr = scanner.nextLine().trim();
 
         int billingID = WorkspaceManager.nextVal(conn, "SEQ_BILLING");
-        
+
         String query2 = "INSERT INTO BillingProfile VALUES (?, ?, ?, ?)";
         PreparedStatement stmt2 = conn.prepareStatement(query2);
         stmt2.setInt(1, billingID);
@@ -238,7 +239,7 @@ public class UserManager {
         String tier = scanner.nextLine();
 
         //Fetch tierID from MembershipTier table with matching tier name
-        String query = "SELECT tierID FROM membershipTier WHERE tierName = ?";
+        String query = "SELECT tierID FROM MembershipTier WHERE name = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setString(1, tier);
         ResultSet tierResult = stmt.executeQuery();
@@ -261,7 +262,7 @@ public class UserManager {
             System.out.println("User field update failed.");
         }
     }
-    
+
     /*-------------------------------------------------------------------------
      | Method: deleteUser
      |
@@ -308,7 +309,7 @@ public class UserManager {
             System.out.println("Could not delete the user " + userID + " due to unpaid invoice(s).");
             return;
         }
-        
+
         //2. Cannot delete user if they have open support tickets
         String querySup = "SELECT outcome FROM Invoice WHERE userID = ?";
         PreparedStatement stmtSup = conn.prepareStatement(querySup);
@@ -341,7 +342,7 @@ public class UserManager {
         }
         else {
             System.out.println("User deletion failed.");
-            return;        
+            return;
         }
         stmtDel.close();
 
@@ -529,12 +530,12 @@ public class UserManager {
     private static void markInvoicePaid(Connection conn, Scanner scanner) throws SQLException {
         System.out.println("User ID: ");
         int userID = scanner.nextInt();
-        
+
         System.out.println("Invoice ID: ");
         int invoiceID = scanner.nextInt();
 
         String query = "UPDATE Invoice SET paymentStatus = 1 " +
-                       "WHERE userID = ? AND invoiceID = ?";
+                "WHERE userID = ? AND invoiceID = ?";
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setInt(1, userID);
         stmt.setInt(2, invoiceID);
